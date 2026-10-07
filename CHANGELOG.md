@@ -5,7 +5,11 @@ format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+
+- NZBGet saved-configuration backups through its JSON-RPC API, with encrypted
+  control credentials, checks for masked responses, native configuration import
+  instructions and explicit queue/history exclusions.
 
 ## [1.1.1-beta] - 2026-10-06
 

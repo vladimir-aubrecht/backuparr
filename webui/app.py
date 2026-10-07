@@ -496,8 +496,11 @@ def _validate_config(data, cfg):
             return f"{meta['label']} isn't available yet"
         if app_data.get("enabled") and not app_data.get("url"):
             return f"{name}: a URL is required to enable it"
+        if (name == "nzbget" and app_data.get("enabled")
+                and (not isinstance(app_data.get("username"), str) or not app_data["username"].strip())):
+            return "nzbget: Control username is required to enable it"
         if app_data.get("enabled") and key_required(name) and not app_data.get("api_key"):
-            return f"{name}: an API key is required to enable it"
+            return f"{name}: {meta.get('key_label', 'an API key')} is required to enable it"
     for name, dest_data in data.get("destinations", {}).items():
         if name not in DEST_NAMES:
             return f"unknown destination: {name}"
@@ -547,7 +550,7 @@ def api_test(app_name):
     if not data.get("url"):
         return jsonify({"ok": False, "message": "URL is required"}), 400
     if key_required(app_name) and not data.get("api_key"):
-        return jsonify({"ok": False, "message": "API key is required"}), 400
+        return jsonify({"ok": False, "message": f"{meta.get('key_label', 'API key')} is required"}), 400
 
     app_cfg = copy.deepcopy(DEFAULT_APP)
     app_cfg.update(data)

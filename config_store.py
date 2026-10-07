@@ -9,7 +9,7 @@ import secrets_crypto
 
 CONFIG_PATH = os.environ.get("BACKUPARR_CONFIG", "/config/backuparr/config.json")
 
-APP_NAMES = ["radarr", "sonarr", "prowlarr", "profilarr", "bazarr", "tdarr", "sabnzbd", "tautulli", "seerr"]
+APP_NAMES = ["radarr", "sonarr", "prowlarr", "profilarr", "bazarr", "tdarr", "sabnzbd", "tautulli", "nzbget", "seerr"]
 
 DEFAULT_APP = {"enabled": False, "url": "", "api_key": "", "username": "", "password": ""}
 
@@ -56,6 +56,16 @@ APP_META = [
     },
     {"id": "sabnzbd", "label": "SABnzbd", "icon": "sabnzbd.svg", "status": "available", "key_required": True, "url_placeholder": "http://sabnzbd:8080", "extra_fields": []},
     {"id": "tautulli", "label": "Tautulli", "icon": "tautulli.svg", "status": "available", "key_required": True, "url_placeholder": "http://tautulli:8181", "extra_fields": []},
+    {
+        "id": "nzbget", "label": "NZBGet", "icon": "nzbget.svg",
+        "status": "available", "key_required": True,
+        "key_label": "Control password",
+        "backup_help": "Saved configuration including passwords, server/category/extension settings. Restore nzbget.conf through NZBGet Settings > System. No queue/history, downloads, NZB contents or scripts.",
+        "url_placeholder": "http://nzbget:6789",
+        "extra_fields": [{"name": "username", "label": "Control username", "type": "text",
+                          "help": "Full-access ControlUsername, usually nzbget"}],
+        "restore_supported": False,
+    },
     {
         "id": "seerr",
         "label": "Seerr",

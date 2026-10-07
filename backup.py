@@ -19,6 +19,7 @@ import requests
 import destination_util
 import rclone_util
 from apps.bazarr import BazarrApp
+from apps.nzbget import NzbgetApp
 from apps.profilarr import ProfilarrApp
 from apps.prowlarr import ProwlarrApp
 from apps.radarr import RadarrApp
@@ -59,6 +60,8 @@ def humanize_error(exc):
 
 
 def build_app(name, app_cfg):
+    if name == "nzbget":
+        return NzbgetApp(app_cfg["url"], app_cfg.get("username", ""), app_cfg["api_key"])
     if name == "radarr":
         return RadarrApp(app_cfg["url"], app_cfg["api_key"])
     if name == "sonarr":

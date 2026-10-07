@@ -9,7 +9,7 @@
 > included. Reviewed and maintained by a human.
 
 Scheduled config/database backups for Radarr, Sonarr, Prowlarr, Profilarr,
-Bazarr, Tdarr, SABnzbd, and Tautulli (Seerr coming soon), sent to every
+Bazarr, Tdarr, SABnzbd, NZBGet, and Tautulli (Seerr coming soon), sent to every
 destination you enable: Local storage, Google Drive, and OneDrive today
 (Dropbox planned). Apps, URLs/API keys, destinations, schedule, retention,
 and restores are all configured and triggered from the web UI, not env vars.
@@ -30,6 +30,7 @@ See [CHANGELOG.md](CHANGELOG.md) for release history.
   - [Architecture](#architecture)
   - [Why not reuse an existing tool?](#why-not-reuse-an-existing-tool)
   - [Per-app backup method (read this before deploying)](#per-app-backup-method-read-this-before-deploying)
+    - [NZBGet backup note](#nzbget-backup-note)
     - [Profilarr backup note](#profilarr-backup-note)
     - [Tautulli backup note](#tautulli-backup-note)
     - [Bazarr auth note](#bazarr-auth-note)
@@ -82,7 +83,35 @@ paste, with no need to run rclone's interactive config wizard yourself.
 | Tdarr | `POST /api/v2/cruddb` with `mode: getAll` for every internal DB collection (library settings, flows, global settings, node registrations, staged/output/statistics) | Fully API-driven both ways. Restore does `removeAll` then re-`insert`s each document one at a time (no bulk-insert mode) - destructive, asks for confirmation. |
 | SABnzbd | `GET /sabnzbd/api?mode=get_config` to back up; `mode=set_config` per key to restore | SABnzbd's API returns every password field (e.g. a Usenet server password) as `**********`, with no way to get the real value. Restore recreates each Usenet server and every plain `misc`-style setting via the API, and asks for each server's real password (fields left out of the API call are untouched, so a skipped password isn't overwritten with a blank). Categories, RSS feeds, and sorters aren't auto-restored. |
 | Tautulli | `GET /api/v2?cmd=download_database` and `cmd=download_config` - each streams a fresh copy directly, no trigger/poll step | The database comes back with Plex tokens nulled out; the config is only lightly sanitized - see the [Tautulli backup note](#tautulli-backup-note). Restore uploads each separately via `cmd=import_database` and `cmd=import_config` (multipart); a config restore restarts Tautulli. |
+| NZBGet | JSON-RPC `loadconfig` exports the saved configuration as `nzbget.conf` | Requires the full-access Control username/password. Includes passwords, variable references and server/category/extension settings. Excludes NZB contents, downloads and extension scripts. Restore manually through NZBGet. |
 | Seerr | *(none)* | Not implemented - Seerr has no backup/restore API. Shown on the Settings tab as "Coming soon". |
+
+### NZBGet backup note
+
+Use the server URL (for example `http://nzbget:6789`), **Control username**
+(`ControlUsername`, usually `nzbget`) and **Control password** (`ControlPassword`).
+Restricted/Add accounts cannot produce a complete backup; masked values cause
+backup and connection testing to fail instead of creating an incomplete archive.
+The control password is stored in Backuparr's encrypted `api_key` field.
+
+The archive contains a native `nzbget.conf` and restoration instructions. It
+preserves saved option values, including `${MainDir}` references, Usenet server
+credentials, categories and extension settings. Unsaved UI edits are excluded.
+
+Download the archive from History, extract `nzbget.conf`, and use NZBGet's
+**Settings > System > Restore settings**. Select the configuration sections to
+restore, save and reload NZBGet. Alternatively, stop NZBGet and replace its
+configuration file, retaining ownership/permissions. Review paths and reinstall
+extension scripts on a new host. Backuparr does not automate this restore.
+Treat the backup as containing live server and control passwords.
+
+**Missing:** queue/history/statistics (the API cannot import the native state),
+queued NZB contents/articles, downloaded/partial media, extension binaries or
+scripts, and log files. Readable but non-restorable diagnostic JSON is not
+included. This is a saved-configuration backup, not a job-state snapshot.
+
+See NZBGet's [RPC authentication](https://nzbget.com/documentation/api/) and
+[`loadconfig` documentation](https://nzbget.com/documentation/api/loadconfig/).
 
 ### Profilarr backup note
 
