@@ -5,7 +5,9 @@ format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+
+- Emby API-only backups of server/plugin settings, libraries, metadata/artwork, playlist/collection membership, schedules and per-user watched/progress data, with explicit limitations, a preview-first API restore command, and manual Live TV recovery instructions.
 
 ## [1.1.1-beta] - 2026-10-06
 

@@ -98,6 +98,7 @@
                 <input type="text" id="s-bazarr_backup_dir" placeholder="/mnt/bazarr-backup">
               </label>
               {% endif %}
+              {% if m.backup_help %}<p class="hint">{{ m.backup_help }}</p>{% endif %}
               <div class="app-card-actions">
                 <button type="button" class="btn btn-ghost btn-sm test-btn">Test connection</button>
                 {% if m.id == 'prowlarr' %}<button type="button" class="btn btn-primary btn-sm" id="discover-btn" disabled>Discover services</button><span class="help-tip" tabindex="0" role="img" aria-label="Reads the apps and download clients connected to Prowlarr, through its API, and fills in the URL and API key of your Radarr, Sonarr and SABnzbd." data-tip="Reads the apps and download clients connected to Prowlarr, through its API, and fills in the URL and API key of your Radarr, Sonarr and SABnzbd.">?</span>{% endif %}
