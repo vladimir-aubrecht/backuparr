@@ -9,7 +9,7 @@ import secrets_crypto
 
 CONFIG_PATH = os.environ.get("BACKUPARR_CONFIG", "/config/backuparr/config.json")
 
-APP_NAMES = ["radarr", "sonarr", "prowlarr", "profilarr", "bazarr", "tdarr", "sabnzbd", "tautulli", "seerr"]
+APP_NAMES = ["radarr", "sonarr", "prowlarr", "profilarr", "bazarr", "tdarr", "sabnzbd", "tautulli", "jellyfin", "seerr"]
 
 DEFAULT_APP = {"enabled": False, "url": "", "api_key": "", "username": "", "password": ""}
 
@@ -56,6 +56,13 @@ APP_META = [
     },
     {"id": "sabnzbd", "label": "SABnzbd", "icon": "sabnzbd.svg", "status": "available", "key_required": True, "url_placeholder": "http://sabnzbd:8080", "extra_fields": []},
     {"id": "tautulli", "label": "Tautulli", "icon": "tautulli.svg", "status": "available", "key_required": True, "url_placeholder": "http://tautulli:8181", "extra_fields": []},
+    {
+        "id": "jellyfin", "label": "Jellyfin", "icon": "jellyfin.svg",
+        "status": "available", "key_required": True,
+        "url_placeholder": "http://jellyfin:8096", "extra_fields": [],
+        "backup_help": "API export: server/plugin settings, catalog and artwork, playlists/collections, schedules and per-user watched state. No native database, user passwords or plugin binaries/data stores. CLI restore after recreating users/libraries; manual Live TV recovery. Not a native restore archive.",
+        "restore_supported": False,
+    },
     {
         "id": "seerr",
         "label": "Seerr",

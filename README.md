@@ -9,7 +9,7 @@
 > included. Reviewed and maintained by a human.
 
 Scheduled config/database backups for Radarr, Sonarr, Prowlarr, Profilarr,
-Bazarr, Tdarr, SABnzbd, and Tautulli (Seerr coming soon), sent to every
+Bazarr, Tdarr, SABnzbd, Tautulli, and Jellyfin (Seerr coming soon), sent to every
 destination you enable: Local storage, Google Drive, and OneDrive today
 (Dropbox planned). Apps, URLs/API keys, destinations, schedule, retention,
 and restores are all configured and triggered from the web UI, not env vars.
@@ -30,6 +30,7 @@ See [CHANGELOG.md](CHANGELOG.md) for release history.
   - [Architecture](#architecture)
   - [Why not reuse an existing tool?](#why-not-reuse-an-existing-tool)
   - [Per-app backup method (read this before deploying)](#per-app-backup-method-read-this-before-deploying)
+    - [Jellyfin backup note](#jellyfin-backup-note)
     - [Profilarr backup note](#profilarr-backup-note)
     - [Tautulli backup note](#tautulli-backup-note)
     - [Bazarr auth note](#bazarr-auth-note)
@@ -82,7 +83,104 @@ paste, with no need to run rclone's interactive config wizard yourself.
 | Tdarr | `POST /api/v2/cruddb` with `mode: getAll` for every internal DB collection (library settings, flows, global settings, node registrations, staged/output/statistics) | Fully API-driven both ways. Restore does `removeAll` then re-`insert`s each document one at a time (no bulk-insert mode) - destructive, asks for confirmation. |
 | SABnzbd | `GET /sabnzbd/api?mode=get_config` to back up; `mode=set_config` per key to restore | SABnzbd's API returns every password field (e.g. a Usenet server password) as `**********`, with no way to get the real value. Restore recreates each Usenet server and every plain `misc`-style setting via the API, and asks for each server's real password (fields left out of the API call are untouched, so a skipped password isn't overwritten with a blank). Categories, RSS feeds, and sorters aren't auto-restored. |
 | Tautulli | `GET /api/v2?cmd=download_database` and `cmd=download_config` - each streams a fresh copy directly, no trigger/poll step | The database comes back with Plex tokens nulled out; the config is only lightly sanitized - see the [Tautulli backup note](#tautulli-backup-note). Restore uploads each separately via `cmd=import_database` and `cmd=import_config` (multipart); a config restore restarts Tautulli. |
+| Jellyfin | Read-only API export of configuration, plugins, catalog/artwork, users, playlist/collection membership and schedules | Includes per-user watch/progress data. See [Jellyfin backup note](#jellyfin-backup-note) for included files, missing data and manual recovery. |
 | Seerr | *(none)* | Not implemented - Seerr has no backup/restore API. Shown on the Settings tab as "Coming soon". |
+
+### Jellyfin backup note
+
+Enter the server URL (for example `http://jellyfin:8096`, including any base path)
+and an **API key generated in the administrator dashboard**. It is stored
+encrypted in Backuparr and sent in the `X-Emby-Token` header. Redirects to
+proxy sign-in pages are rejected; use a directly reachable server URL.
+No native backup API version requirement or filesystem mount is needed.
+
+This is an extensive **API export, not a native database backup**. Backuparr
+only reads the API and includes the following in the ZIP:
+
+| Files | Included data |
+|---|---|
+| `system-configuration.json`, `configuration/` | Core server configuration and available named settings: encoding, metadata, network, branding, Live TV, NFO, database and subtitles. |
+| `plugins.json`, `plugin-configuration/` | Installed plugin versions/status and configuration exposed by their standard API. |
+| `libraries.json`, `catalog.jsonl` | Library paths/options and the administrator's paginated catalog: extended metadata, paths, provider IDs, people, genres, studios, media-source/stream descriptions and chapters. Media files are not downloaded. |
+| `users.json`, `display-preferences/`, `user-images/` | Users including hidden/disabled accounts, names, IDs, policies, preferences, web-client display settings and available profile images. |
+| `user-items/<user-id>.jsonl` | All items visible to each user, including watched **and unwatched** state, zero/nonzero progress, play counts, favorites, likes/dislikes and last-played times where exposed. |
+| `memberships/` | Playlist entries in their original order (including repeated tracks where restorable) and collection members, per user. |
+| `images/` | Library artwork exposed through the API, with item/type/index/MIME mappings. This can make archives large. |
+| `scheduled-tasks.json`, `live-tv/` | Scheduled-task settings/triggers and Live TV recording/series timers. |
+| `server.json`, `manifest.json`, `RESTORE.txt` | Server identity/version, format version, item counts, unavailable endpoints and recovery instructions. |
+
+**What is still missing:** native database files, user password hashes, API-key/device registrations,
+login sessions, plugin binaries and private/custom plugin data stores,
+settings not exposed by the supported endpoints, non-web-client display
+preferences that cannot be enumerated, complete historical playback events,
+original metadata-directory files, media/recording/subtitle files, trickplay
+files and caches. Artwork is saved as API responses with an index, not as a
+copy of the native metadata directory. Per-user data for deleted or currently
+inaccessible items is unavailable through the items API.
+
+`manifest.json` records named configurations/endpoints absent in a given
+server version and plugins without a standard configuration endpoint. Other
+API errors, missing watched state for playable items, truncated listings and
+changing item counts fail the export. Sequential API reads are **not an
+atomic snapshot**; schedule backups away from library scans and configuration
+changes. Playback during an export can also change user state.
+
+**Recovery uses the included command-line importer.** This ZIP is not a native
+Jellyfin backup and is excluded from Backuparr's Restore tab. Download it from
+History, then prepare a target running the same server version (the importer
+rejects a different major version):
+
+1. Reconnect the original media, recreate library names/paths and finish a scan.
+2. Recreate each exported user with the same name and a new password; passwords
+   cannot be recovered. Install the same plugin versions.
+3. Recreate empty playlists and collections with their original names. Set
+   playlist ownership/sharing manually: these access rules are not exported.
+   The sole administrator must be allowed to edit playlists, or specify
+   `--playlist-owner OLD_PLAYLIST_ID=USER_NAME` for each different editor.
+4. Review the exported settings, especially paths, network bindings and user
+   policies. Use a fresh target and stop playback/scans during restoration.
+5. Run the importer from a checkout/container containing this integration:
+
+```sh
+python -m apps.media_restore /path/jellyfin-api-export.zip --url http://jellyfin:8096 --key-file /path/admin-key
+```
+
+The key file contains just the target administrator API key; keep it private.
+Omit `--url`/`--key-file` to use Backuparr's saved encrypted app configuration.
+If media moved, add `--path-map /old/media=/new/media` (repeat for multiple roots).
+The first run only reads the server and prints a plan. It matches users by name
+and media by type/path or provider IDs and episode identity, refusing missing
+or ambiguous matches before making changes. Review the plan, then rerun the
+same command with **`--apply`** to overwrite the covered target data.
+
+The importer restores server/named/plugin configuration, library options,
+user configuration/policies, web display preferences, per-user watch state
+(including unwatched and zero progress), favorites/likes, editable metadata,
+images, playlist/collection membership and scheduled-task triggers. Metadata
+streams/chapters describe the media for matching; the server reconstructs them
+by scanning the original files. User/item IDs are remapped rather than copied.
+Network settings run last and may require a server restart. A failed write
+stops with a completed-action count; there is **no automatic rollback**.
+Rerun the preview and inspect the target before retrying a partial restore.
+
+**Live TV schedules require a separate manual step.** Reconfigure tuners and
+guide providers, refresh the guide, then use `live-tv/series-timers.json` and
+`live-tv/timers.json` to recreate future series/recordings in the server's Live
+TV dashboard. Preserve days, times, padding, quality and retention choices.
+For API recovery, POST the reviewed schedule to `/LiveTv/SeriesTimers` or
+`/LiveTv/Timers` respectively, replacing old `ChannelId`/`ProgramId` with current
+guide IDs and omitting old timer IDs/status. Create series rules before individual
+timers and avoid creating their generated episodes twice. Past broadcasts cannot
+be scheduled again; recording media is not included. The CLI does not submit
+recording schedules automatically.
+
+Archived plugin settings may contain credentials. Protect every backup destination.
+
+Jellyfin's current playlist API deduplicates repeated media entries. Backups
+reject a legacy playlist containing duplicates rather than promise an exact
+restore the API cannot perform. Other playlist ordering is retained.
+
+See the [official API documentation](https://api.jellyfin.org/).
 
 ### Profilarr backup note
 
