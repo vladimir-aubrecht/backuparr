@@ -19,17 +19,19 @@
       <span class="brand-tagline">Backup your Arrs</span>
     </span>
   </div>
-  <nav class="tabs" id="tabs">
+  <nav class="tabs" id="tabs" aria-label="Main navigation">
     <button class="tab-btn active" data-tab="overview" type="button">Overview</button>
     <button class="tab-btn" data-tab="settings" type="button">Settings</button>
     <button class="tab-btn" data-tab="run" type="button">Run &amp; Status</button>
     <button class="tab-btn" data-tab="history" type="button">History</button>
     <button class="tab-btn" data-tab="restore" type="button">Restore</button>
   </nav>
-  {% if not auth_disabled %}
-  <button type="button" class="btn btn-ghost btn-sm" id="logout-btn">Log out</button>
-  {% endif %}
-  <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle light/dark theme">&#9789;</button>
+  <div class="topbar-actions">
+    {% if not auth_disabled %}
+    <button type="button" class="btn btn-ghost btn-sm" id="logout-btn">Log out</button>
+    {% endif %}
+    <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle light/dark theme">&#9789;</button>
+  </div>
 </header>
 
 <main class="content">
@@ -46,7 +48,7 @@
     <div class="settings-toolbar">
       <div>
         <strong>Settings</strong>
-        <span class="hint">Covers everything below - the apps on the left and storage &amp; schedule on the right.</span>
+        <span class="hint">Manage apps, storage, and your backup schedule.</span>
       </div>
       <div class="save-row">
         <button type="button" class="btn btn-primary" id="save-btn">Save settings</button>

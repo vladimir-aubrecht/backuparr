@@ -1345,27 +1345,40 @@ async function loadHistory() {
 
       const table = document.createElement("table");
       table.className = "history-table";
-      table.innerHTML = "<thead><tr><th>File</th><th>Size</th><th>Modified</th><th></th></tr></thead>";
+      // Preserve table semantics when the mobile layout stacks each row.
+      table.setAttribute("role", "table");
+      table.setAttribute("aria-label", `${appLabel(appId)} backups`);
+      table.innerHTML = '<thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">File</th><th role="columnheader" scope="col">Size</th><th role="columnheader" scope="col">Modified</th><th role="columnheader" scope="col"><span class="sr-only">Actions</span></th></tr></thead>';
       const tbody = document.createElement("tbody");
+      tbody.setAttribute("role", "rowgroup");
       entries.forEach((e) => {
         const tr = document.createElement("tr");
+        tr.setAttribute("role", "row");
         const nameTd = document.createElement("td");
+        nameTd.className = "history-name";
         nameTd.textContent = e.name;
         const sizeTd = document.createElement("td");
+        sizeTd.className = "history-size";
+        sizeTd.dataset.label = "Size";
         sizeTd.textContent = fmtBytes(e.size);
         const timeTd = document.createElement("td");
+        timeTd.className = "history-time";
+        timeTd.dataset.label = "Modified";
         timeTd.textContent = fmtTime(e.mod_time);
         const actionsTd = document.createElement("td");
         actionsTd.className = "actions-cell";
+        [nameTd, sizeTd, timeTd, actionsTd].forEach((cell) => cell.setAttribute("role", "cell"));
         const dlLink = document.createElement("a");
         dlLink.className = "icon-btn";
         dlLink.title = "Download this backup";
+        dlLink.setAttribute("aria-label", `Download ${e.name}`);
         dlLink.textContent = "↓";
         dlLink.href = `/api/history/${destId}/${appId}/${encodeURIComponent(e.name)}/download`;
         const delBtn = document.createElement("button");
         delBtn.type = "button";
         delBtn.className = "icon-btn";
         delBtn.title = "Delete this backup";
+        delBtn.setAttribute("aria-label", `Delete ${e.name}`);
         delBtn.textContent = "×";
         delBtn.addEventListener("click", () => deleteBackup(destId, appId, e.name, tr));
         actionsTd.append(dlLink, delBtn);

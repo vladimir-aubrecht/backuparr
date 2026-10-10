@@ -5,7 +5,13 @@ format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-_Nothing yet._
+### Fixed
+
+- Mobile layouts now keep navigation, settings, backup history and restore
+  controls within the screen. Compact toolbars, larger touch targets and
+  stacked history rows make the UI easier to use on phones.
+- Native form controls now follow the selected light or dark theme, including
+  time and destination pickers in Safari.
 
 ## [1.2.1-beta] - 2026-10-07
 

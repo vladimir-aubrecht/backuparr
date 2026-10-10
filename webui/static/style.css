@@ -1,4 +1,5 @@
 :root {
+  color-scheme: light;
   --bg: #f5f6f8;
   --bg-elevated: #ffffff;
   --border: #e2e5ea;
@@ -16,6 +17,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
+    color-scheme: dark;
     --bg: #14161a;
     --bg-elevated: #1c1f26;
     --border: #2b2f38;
@@ -33,6 +35,7 @@
 
 /* Theme-toggle override - wins over prefers-color-scheme either direction. */
 :root[data-theme="dark"] {
+  color-scheme: dark;
   --bg: #14161a;
   --bg-elevated: #1c1f26;
   --border: #2b2f38;
@@ -49,12 +52,27 @@
 
 * { box-sizing: border-box; }
 
+html { scroll-padding-top: calc(var(--topbar-h, 0px) + 12px); }
+
 /* !important since it must win over any element's base display value. */
 .hidden { display: none !important; }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
 
 body {
   margin: 0;
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   background: var(--bg);
@@ -67,6 +85,8 @@ body {
 /* Pins the footer to the viewport bottom on short pages, scrolls normally otherwise. */
 .content { flex: 1 0 auto; }
 .site-footer { flex-shrink: 0; }
+
+.content, .site-footer, .modal { overflow-wrap: anywhere; }
 
 .topbar {
   display: flex;
@@ -83,6 +103,12 @@ body {
 }
 
 .brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.topbar-actions {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -131,6 +157,7 @@ body {
   padding: 7px 16px;
   border-radius: 999px;
   cursor: pointer;
+  white-space: nowrap;
   transition: background 0.15s ease, color 0.15s ease;
 }
 
@@ -276,10 +303,12 @@ body {
 
 .grid {
   display: grid;
-  grid-template-columns: 1.3fr 1fr;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
   gap: 20px;
   align-items: start;
 }
+
+.grid > *, .field, .app-card-body, .inline-group > * { min-width: 0; }
 
 @media (max-width: 860px) {
   .grid { grid-template-columns: 1fr; }
@@ -339,10 +368,6 @@ body {
 .discovery-key-status { display: block; margin-top: 6px; color: var(--danger); font-size: 13px; font-weight: 400; overflow-wrap: anywhere; }
 .discovery-warning { font-size: 13px; color: var(--text-muted); overflow-wrap: anywhere; }
 
-@media (max-width: 480px) {
-  .app-card-head { flex-wrap: wrap; }
-}
-
 .app-card-head {
   display: flex;
   align-items: center;
@@ -354,6 +379,7 @@ body {
   font-size: 16px;
   font-weight: 600;
   flex: 1;
+  min-width: 0;
 }
 
 .app-card-body {
@@ -387,9 +413,12 @@ body {
 input[type="text"],
 input[type="password"],
 input[type="number"],
+input[type="time"],
 select,
 textarea {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   font: inherit;
   padding: 8px 10px;
   border-radius: 8px;
@@ -465,6 +494,7 @@ input:focus, select:focus, textarea:focus {
   padding: 8px 16px;
   border: 1px solid transparent;
   cursor: pointer;
+  max-width: 100%;
   transition: filter 0.15s ease, background 0.15s ease;
 }
 
@@ -507,6 +537,7 @@ input:focus, select:focus, textarea:focus {
 
 .app-card-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
 }
@@ -606,9 +637,11 @@ input:focus, select:focus, textarea:focus {
 
 .switch input:checked + .slider { background: var(--accent); }
 .switch input:checked + .slider::before { transform: translateX(15px); }
+.switch input:focus-visible + .slider { outline: 2px solid var(--accent); outline-offset: 3px; }
 
 .save-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12px;
   margin-top: 6px;
@@ -621,6 +654,8 @@ input:focus, select:focus, textarea:focus {
 
 .run-head {
   display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 14px;
@@ -630,6 +665,7 @@ input:focus, select:focus, textarea:focus {
 
 .run-head-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
 }
@@ -707,6 +743,8 @@ input:focus, select:focus, textarea:focus {
   font-size: 15px;
 }
 
+.history-name { overflow-wrap: anywhere; }
+
 .history-table th, .history-table td {
   text-align: left;
   padding: 6px 8px;
@@ -731,7 +769,7 @@ input:focus, select:focus, textarea:focus {
   gap: 8px;
 }
 
-.checkbox-field input { width: auto; }
+.checkbox-field input { width: auto; flex-shrink: 0; }
 
 .extra-field-block {
   border: 1px dashed var(--border);
@@ -843,7 +881,7 @@ code {
 
 .overview-apps {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
   gap: 14px;
 }
 
@@ -972,7 +1010,9 @@ code {
   width: 100%;
   max-width: 560px;
   max-height: 85vh;
+  max-height: 85dvh;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .modal-head {
@@ -1066,6 +1106,7 @@ code {
 
 .release-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
@@ -1107,6 +1148,7 @@ code {
 /* ------------------------------------------------------------- auth ---- */
 .auth-page {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1131,4 +1173,143 @@ code {
 .auth-forgot {
   margin: 16px 0 0;
   text-align: center;
+}
+
+/* Navigation gets its own row on tablets and phones. Constrain the strip
+   independently of the page; phones wrap it so every tab stays visible. */
+@media (max-width: 960px) {
+  .topbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .topbar-actions { grid-column: 2; grid-row: 1; }
+  .tabs {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+  .tab-btn { flex: 1 0 auto; }
+}
+
+@media (max-width: 600px) {
+  .topbar { padding: 10px 12px; gap: 8px; }
+  .topbar .brand { gap: 8px; }
+  .topbar .brand-mark { width: 32px; height: 32px; }
+  .topbar .brand-name { font-size: 22px; }
+  .topbar .brand-tagline { display: none; }
+  .topbar-actions { gap: 8px; }
+  .tabs { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border-radius: 12px; }
+  .tab-btn { grid-column: span 2; padding: 8px; border-radius: 8px; font-size: 14.5px; white-space: normal; }
+  .tab-btn[data-tab="history"], .tab-btn[data-tab="restore"] { grid-column: span 3; }
+
+  .content { padding: 16px 12px 28px; }
+  .card { padding: 16px; margin-bottom: 16px; }
+  .app-card { padding: 12px; }
+  .app-card-head { flex-wrap: wrap; gap: 8px; }
+  .grid, .right-col { gap: 16px; }
+  .apps-card { margin-bottom: 0; }
+
+  /* Keep Save reachable without covering half the phone with two toolbars. */
+  .settings-toolbar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 6px 12px;
+    padding: 10px 12px;
+    margin-bottom: 16px;
+    top: calc(var(--topbar-h, 120px) + 8px);
+  }
+  .settings-toolbar .hint { display: none; }
+  .settings-toolbar .save-row { display: contents; }
+  .settings-toolbar #save-btn { grid-column: 2; grid-row: 1; justify-self: end; }
+  .settings-toolbar .save-result { grid-column: 1 / -1; max-height: 4.5em; overflow-y: auto; }
+  .settings-toolbar .save-result:empty { display: none; }
+  #tab-settings .field { scroll-margin-top: 80px; }
+
+  .btn, .tab-btn, .collapse-toggle { min-height: 44px; }
+  .theme-toggle, .icon-btn { width: 44px; height: 44px; flex-shrink: 0; }
+  .icon-btn { font-size: 18px; }
+  .help-tip { width: 28px; height: 28px; font-size: 14px; }
+  .switch { width: 44px; height: 44px; }
+  .switch .slider { inset: 11.5px 4px; }
+  .collapse-toggle { text-align: left; }
+  textarea { font-size: 16px; }
+  .checkbox-field { align-items: flex-start; }
+  .checkbox-field input { margin-top: 5px; }
+  .app-card-actions .test-result { flex-basis: 100%; }
+  .server-pw-row { flex-direction: column; align-items: stretch; gap: 6px; }
+  .server-pw-row .server-label { min-width: 0; }
+  .server-pw-row input { flex: auto; }
+
+  .overview-summary { gap: 16px 24px; }
+  .overview-stat .stat-value { font-size: 20px; }
+  .overview-stat-dest { align-items: flex-start; }
+  .overview-dest-icons { gap: 8px; }
+  .log-view { height: 50vh; height: 50dvh; min-height: 180px; padding: 10px; font-size: 13px; }
+
+  /* Read a backup and reach both actions without scrolling a wide table. */
+  .history-table, .history-table tbody { display: block; }
+  .history-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .history-table tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "name name" "size actions" "time actions";
+    gap: 4px 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .history-table td { display: block; padding: 0; border: 0; }
+  .history-name { grid-area: name; margin-bottom: 4px; font-weight: 600; }
+  .history-size { grid-area: size; }
+  .history-time { grid-area: time; }
+  .history-size, .history-time { font-size: 13.5px; color: var(--text-muted); }
+  .history-table td[data-label]::before { content: attr(data-label) ": "; }
+  .history-table td.actions-cell { grid-area: actions; width: auto; align-self: center; }
+
+  .modal-overlay { padding: 12px; }
+  .modal { max-height: calc(100vh - 24px); max-height: calc(100dvh - 24px); }
+  .modal-head { padding: 12px 16px; }
+  .modal-head h3 { font-size: 18px; }
+  .modal-body { padding: 16px; }
+  .help-tip:hover::after, .help-tip:focus::after {
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    width: auto;
+    transform: none;
+  }
+  .auth-page { padding: 16px; }
+  .auth-card { margin-bottom: 0; }
+  .site-footer { padding: 16px 12px; }
+  .version-check { flex-wrap: wrap; justify-content: center; margin-left: 0; }
+
+  /* Feedback stays in the footer so it cannot cover form or restore actions. */
+  .feedback {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    align-self: flex-end;
+    margin: 0 12px calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+  .feedback-menu { position: absolute; bottom: 58px; right: 0; }
+  .toast-root { left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+  .toast { max-width: 100%; overflow-wrap: anywhere; }
+}
+
+/* Leave room for content and the on-screen keyboard on short viewports. */
+@media (max-height: 500px) {
+  .topbar, .settings-toolbar { position: static; }
+  html { scroll-padding-top: 12px; }
+  #tab-settings .field { scroll-margin-top: 0; }
 }
