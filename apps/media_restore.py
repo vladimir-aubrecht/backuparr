@@ -183,37 +183,57 @@ class MediaRestore:
                 body.update({'Id': new_id, 'Type': old.get('Type')})
                 for key in ('Genres', 'Tags', 'Studios', 'People', 'Taglines', 'LockedFields'):
                     body.setdefault(key, [])
+                if self.app.name == 'emby':
+                    # Emby reads and writes TagItems, unlike Jellyfin's Tags.
+                    # Tag IDs belong to the source server; restore names only.
+                    tags = old.get('TagItems', [{'Name': tag} for tag in body['Tags']])
+                    body['TagItems'] = [{'Name': tag['Name']} for tag in tags]
+                    body.pop('Tags')
                 body.setdefault('ProviderIds', {})
                 self._action('metadata', 'POST', f'/Items/{new_id}', json=body)
-        processed = set()
+        memberships = defaultdict(dict)
         for filename in sorted(names):
             if filename.startswith('memberships/') and filename.endswith('.jsonl'):
                 _, old_user, leaf = filename.split('/')
-                old_id = self.app._id(leaf[:-6])
-                if old_id in processed:
-                    continue  # Shared playlists/collections are rebuilt once.
-                processed.add(old_id)
-                new_id, new_user = self.item_map[old_id], self.user_map[old_user]
-                members = [self.item_map[x['Id']] for x in self._rows(filename)]
-                if all_old[old_id]['Type'] == 'Playlist':
-                    owner = self.playlist_owners.get(old_id)
-                    candidates = [u for u in old_users if (u.get('Name', '').casefold() == owner.casefold() if owner else u['Policy'].get('IsAdministrator'))]
-                    if len(candidates) != 1:
-                        raise MediaServerError(f'Specify --playlist-owner {old_id}=USER_NAME for this playlist')
-                    new_user = self.user_map[candidates[0]['Id']]
-                    existing = list(self.app._items(new_user, path=f'/Playlists/{new_id}/Items', playlist=True))
-                    entry_ids = [self.app._id(x['PlaylistItemId']) for x in existing]
-                    if entry_ids:
-                        self._action('playlists', 'DELETE', f'/Playlists/{new_id}/Items', params={'EntryIds': ','.join(entry_ids), 'UserId': new_user})
-                    # One request per entry preserves intentional duplicates on both servers.
-                    for member in members:
-                        self._action('playlists', 'POST', f'/Playlists/{new_id}/Items', params={'Ids': member, 'UserId': new_user})
-                else:
-                    existing = list(self.app._items(new_user, ParentId=new_id, Recursive='false'))
-                    if existing:
-                        self._action('collections', 'DELETE', f'/Collections/{new_id}/Items', params={'Ids': ','.join(x['Id'] for x in existing)})
-                    if members:
-                        self._action('collections', 'POST', f'/Collections/{new_id}/Items', params={'Ids': ','.join(members)})
+                memberships[self.app._id(leaf[:-6])][old_user] = filename
+        for old_id, exports in sorted(memberships.items()):
+            playlist = all_old[old_id]['Type'] == 'Playlist'
+            if playlist:
+                owner = self.playlist_owners.get(old_id)
+                candidates = [u for u in old_users if (u.get('Name', '').casefold() == owner.casefold() if owner else u['Policy'].get('IsAdministrator'))]
+                if len(candidates) != 1:
+                    raise MediaServerError(f'Specify --playlist-owner {old_id}=USER_NAME for this playlist')
+                source_user = candidates[0]['Id']
+                hint = f'Specify --playlist-owner {old_id}=USER_NAME for an owner with a complete exported membership'
+            else:
+                source_user = next((u['Id'] for u in old_users if u['Policy'].get('IsAdministrator') and u['Id'] in exports), None)
+                hint = 'Create a new export with complete administrator access to this collection'
+            if source_user not in exports:
+                raise MediaServerError(f'No membership export for the selected user of {old_id}. {hint}')
+            source_members = [x['Id'] for x in self._rows(exports[source_user])]
+            # Other users may see filtered or deduplicated views. Never replace
+            # the authoritative ordered sequence with whichever UUID sorts first.
+            counts = Counter(source_members)
+            for filename in exports.values():
+                if Counter(x['Id'] for x in self._rows(filename)) - counts:
+                    raise MediaServerError(f'Incomplete membership export for the selected user of {old_id}. {hint}')
+            new_id, new_user = self.item_map[old_id], self.user_map[source_user]
+            members = [self.item_map[item_id] for item_id in source_members]
+            if playlist:
+                existing = list(self.app._items(new_user, path=f'/Playlists/{new_id}/Items', playlist=True))
+                entry_ids = [self.app._id(x['PlaylistItemId']) for x in existing]
+                if entry_ids:
+                    self._action('playlists', 'DELETE', f'/Playlists/{new_id}/Items', params={'EntryIds': ','.join(entry_ids), 'UserId': new_user})
+                # One request per entry preserves intentional duplicates on both servers.
+                for member in members:
+                    self._action('playlists', 'POST', f'/Playlists/{new_id}/Items', params={'Ids': member, 'UserId': new_user})
+            else:
+                existing = list(self.app._items(new_user, ParentId=new_id, Recursive='false'))
+                if existing:
+                    self._action('collections', 'DELETE', f'/Collections/{new_id}/Items', params={'Ids': ','.join(x['Id'] for x in existing)})
+                if members:
+                    self._action('collections', 'POST', f'/Collections/{new_id}/Items', params={'Ids': ','.join(members)})
+        for filename in sorted(names):
             if filename.startswith('images/') and filename.endswith('/index.json'):
                 old_id = self.app._id(filename.split('/')[1]);new_id = self.item_map[old_id]
                 images = self._json(filename)
@@ -267,7 +287,7 @@ def main(argv=None):
     parser.add_argument('--url', help='Target server URL; defaults to the saved app configuration')
     parser.add_argument('--key-file', type=Path, help='File containing the target administrator API key')
     parser.add_argument('--path-map', action='append', default=[], metavar='OLD=NEW', help='Map media path prefixes when moving servers')
-    parser.add_argument('--playlist-owner', action='append', default=[], metavar='OLD_ID=USER_NAME', help='User allowed to edit a playlist; defaults to the sole administrator')
+    parser.add_argument('--playlist-owner', action='append', default=[], metavar='OLD_ID=USER_NAME', help='User whose exported playlist membership to restore and who can edit the target playlist; defaults to the sole administrator')
     parser.add_argument('--apply', action='store_true', help='Apply the validated plan, overwriting the listed settings/data')
     args = parser.parse_args(argv)
     try:
