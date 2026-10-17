@@ -15,7 +15,7 @@ class ConfigError(RuntimeError):
     truncated by a full disk, ...). The message says what to do about it."""
 
 
-APP_NAMES = ["radarr", "sonarr", "prowlarr", "profilarr", "bazarr", "tdarr", "sabnzbd", "tautulli", "seerr"]
+APP_NAMES = ["radarr", "sonarr", "prowlarr", "profilarr", "bazarr", "tdarr", "sabnzbd", "tautulli", "open_webui", "seerr"]
 
 DEFAULT_APP = {"enabled": False, "url": "", "api_key": "", "username": "", "password": ""}
 
@@ -62,6 +62,13 @@ APP_META = [
     },
     {"id": "sabnzbd", "label": "SABnzbd", "icon": "sabnzbd.svg", "status": "available", "key_required": True, "url_placeholder": "http://sabnzbd:8080", "extra_fields": []},
     {"id": "tautulli", "label": "Tautulli", "icon": "tautulli.svg", "status": "available", "key_required": True, "url_placeholder": "http://tautulli:8181", "extra_fields": []},
+    {
+        "id": "open_webui", "label": "Open WebUI", "icon": "open-webui.svg",
+        "status": "available", "key_required": True,
+        "url_placeholder": "http://open-webui:8080", "extra_fields": [],
+        "restore_supported": False,
+        "backup_help": "Limited API export: all users' chats/settings, visible workspace resources and original uploads. Requires an admin API key and ENABLE_ADMIN_EXPORT. Recovery uses the documented CLI with each user's own token; accounts, sharing, vector DB and server files need separate recovery. Not a database snapshot. See README for the exact scope.",
+    },
     {
         "id": "seerr",
         "label": "Seerr",

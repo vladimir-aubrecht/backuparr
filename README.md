@@ -551,3 +551,14 @@ GitHub](https://github.com/selfhst/icons)), licensed
 
 [GNU AGPLv3](LICENSE) - if you run a modified version as a network service,
 its source must be available to its users too.
+
+
+### Open WebUI
+
+Open WebUI supports a **limited API export**, with explicit recovery instructions
+and a preview-first CLI. It includes all users' chats/settings, visible workspace
+resources and original uploaded files. It is **not a complete database backup**;
+accounts, sharing permissions, vector data and server files need separate recovery.
+Use an administrator API key with admin export enabled. See
+[Open WebUI backup and recovery](docs/open-webui.md) for the exact scope,
+permissions, version requirements and restore commands.

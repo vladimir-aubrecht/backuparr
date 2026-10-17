@@ -5,7 +5,9 @@ format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+
+- Open WebUI API exports and a preview-first recovery CLI; document the partial scope and per-user recovery requirements.
 
 ## [1.2.1-beta] - 2026-10-07
 

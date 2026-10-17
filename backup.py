@@ -22,6 +22,7 @@ import requests
 import destination_util
 import rclone_util
 from apps.bazarr import BazarrApp, BazarrError
+from apps.open_webui import OpenWebUIApp, OpenWebUIError
 from apps.profilarr import ProfilarrApp, ProfilarrError
 from apps.prowlarr import ProwlarrApp
 from apps.radarr import RadarrApp
@@ -57,6 +58,7 @@ _CLEAN_MESSAGE_ERRORS = (
     ConfigError,
     destination_util.DestinationError,
     ProfilarrError,
+    OpenWebUIError,
     rclone_util.RcloneError,
     SabnzbdError,
     ServarrError,
@@ -206,6 +208,8 @@ def build_app(name, app_cfg):
         return TdarrApp(app_cfg["url"], api_key=app_cfg.get("api_key") or None)
     if name == "sabnzbd":
         return SabnzbdApp(app_cfg["url"], app_cfg["api_key"])
+    if name == "open_webui":
+        return OpenWebUIApp(app_cfg["url"], app_cfg["api_key"])
     if name == "tautulli":
         return TautulliApp(app_cfg["url"], app_cfg["api_key"])
     raise ValueError(f"Unknown app: {name}")
