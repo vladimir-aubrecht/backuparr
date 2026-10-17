@@ -18,7 +18,7 @@ concurrency:
 
 # Build the exact tested integration commit, independently of this workflow.
 env:
-  SOURCE_SHA: ec5cb8fb271be3866aae8d55609a0a7675ba8dd8
+  SOURCE_SHA: f4f9a33974a561402a1fe0750cd6c6f9699f45e4
 
 jobs:
   publish:
