@@ -7,6 +7,7 @@ format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Emby API-only backups of server/plugin settings, libraries, metadata/artwork, playlist/collection membership, schedules and per-user watched/progress data, with explicit limitations, a preview-first API restore command, and manual Live TV recovery instructions.
 - Jellyfin API-only backups of server/plugin settings, libraries, metadata/artwork, playlist/collection membership, schedules and per-user watched/progress data, with explicit limitations, a preview-first API restore command, and manual Live TV recovery instructions.
 - Plex backups now log each export phase, library metadata counts and periodic database/artwork download progress in the live run log.
 - Plex native database backups preserving all users' local watched/progress data, plus API server/library settings, metadata and artwork, with manual restore guidance.

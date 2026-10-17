@@ -23,6 +23,7 @@ import destination_util
 import rclone_util
 from apps.bazarr import BazarrApp, BazarrError
 from apps.jellyfin import JellyfinApp
+from apps.emby import EmbyApp
 from apps.plex import PlexApp, PlexError
 from apps.profilarr import ProfilarrApp, ProfilarrError
 from apps.prowlarr import ProwlarrApp
@@ -190,6 +191,8 @@ def log_failure(logger, summary, exc, url=None, app=None):
 
 
 def build_app(name, app_cfg):
+    if name == "emby":
+        return EmbyApp(app_cfg["url"], app_cfg["api_key"])
     if name == "jellyfin":
         return JellyfinApp(app_cfg["url"], app_cfg["api_key"])
     if name == "plex":
