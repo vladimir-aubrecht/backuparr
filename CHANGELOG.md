@@ -11,6 +11,10 @@ format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   encrypted database credentials, database-content verification and documented
   exclusions for game/media files, save history and server environment.
 
+### Fixed
+
+- GameVault database and savefile restores stream multipart uploads instead of buffering whole files in memory.
+
 ## [1.2.1-beta] - 2026-10-07
 
 ### Changed

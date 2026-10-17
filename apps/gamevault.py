@@ -19,6 +19,8 @@ import zipfile
 
 import requests
 
+from apps.http_upload import multipart_body
+
 log = logging.getLogger(f"backuparr.{__name__}")
 
 
@@ -105,6 +107,14 @@ class GamevaultApp:
         headers = {"X-Api-Key": self.api_key}
         if database:
             headers["X-Database-Password"] = self.database_password
+        files = kwargs.pop("files", None)
+        if files:
+            payload = multipart_body({
+                name: (filename, stream, os.fstat(stream.fileno()).st_size - stream.tell(), mime)
+                for name, (filename, stream, mime) in files.items()
+            })
+            kwargs["data"] = payload
+            headers["Content-Type"] = payload.content_type
         try:
             response = self.session.request(method, self.url + "/api" + path, headers=headers,
                                             timeout=kwargs.pop("timeout", self.timeout), allow_redirects=False, **kwargs)

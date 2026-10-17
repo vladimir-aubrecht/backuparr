@@ -9,6 +9,8 @@ import zipfile
 import pytest
 import requests
 
+from test_http_upload import read_multipart
+
 from apps.gamevault import GamevaultApp, GamevaultError, _database_contents
 
 KEY = "source-admin-key"
@@ -92,19 +94,22 @@ class Session:
             if route.startswith("/savefiles/"):
                 key = tuple(map(int, route.split("/")[3::2]))
                 return Reply(content=self.saves[key]) if key in self.saves else Reply(404)
+        if method == "POST":
+            assert "files" not in kwargs
+            uploaded, fields = read_multipart(kwargs["data"], kwargs["headers"]["Content-Type"])
+            assert not fields
         if method == "POST" and route == "/admin/database/restore":
-            filename, stream, mime = kwargs["files"]["file"]
+            filename, value, mime = uploaded["file"]
             assert filename == "database.db" and mime == "application/octet-stream"
-            value = stream.read()
             self.writes.append((route, value))
             if not self.ignore_restore:
                 self.database = value
                 self.key = KEY
             return Reply(201)
         if method == "POST" and route.startswith("/savefiles/"):
-            filename, stream, mime = kwargs["files"]["file"]
+            filename, value, mime = uploaded["file"]
             assert filename == "save.zip" and mime == "application/zip"
-            self.writes.append((route, stream.read()))
+            self.writes.append((route, value))
             return Reply(201)
         if method == "PUT" and route == "/config/news":
             self.writes.append((route, kwargs["json"]["content"]))
