@@ -15,7 +15,7 @@ class ConfigError(RuntimeError):
     truncated by a full disk, ...). The message says what to do about it."""
 
 
-APP_NAMES = ["radarr", "sonarr", "prowlarr", "profilarr", "bazarr", "tdarr", "sabnzbd", "tautulli", "plex", "seerr"]
+APP_NAMES = ["radarr", "sonarr", "prowlarr", "profilarr", "bazarr", "tdarr", "sabnzbd", "tautulli", "plex", "jellyfin", "seerr"]
 
 DEFAULT_APP = {"enabled": False, "url": "", "api_key": "", "username": "", "password": ""}
 
@@ -74,6 +74,13 @@ APP_META = [
         ],
         "backup_help": "Use the server owner's Plex token. Library databases including all users' local watched/progress data, API server/library settings, metadata and artwork. No native Preferences.xml, media or plugin files. The optional restore agent recovers the database; settings and artwork need manual recovery.",
         "restore_supported": True,
+    },
+    {
+        "id": "jellyfin", "label": "Jellyfin", "icon": "jellyfin.svg",
+        "status": "available", "key_required": True,
+        "url_placeholder": "http://jellyfin:8096", "extra_fields": [],
+        "backup_help": "API export: server/plugin settings, catalog and artwork, playlists/collections, schedules and per-user watched state. No native database, user passwords or plugin binaries/data stores. CLI restore after recreating users/libraries; manual Live TV recovery. Not a native restore archive.",
+        "restore_supported": False,
     },
     {
         "id": "seerr",

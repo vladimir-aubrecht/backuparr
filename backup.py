@@ -22,6 +22,7 @@ import requests
 import destination_util
 import rclone_util
 from apps.bazarr import BazarrApp, BazarrError
+from apps.jellyfin import JellyfinApp
 from apps.plex import PlexApp, PlexError
 from apps.profilarr import ProfilarrApp, ProfilarrError
 from apps.prowlarr import ProwlarrApp
@@ -189,6 +190,8 @@ def log_failure(logger, summary, exc, url=None, app=None):
 
 
 def build_app(name, app_cfg):
+    if name == "jellyfin":
+        return JellyfinApp(app_cfg["url"], app_cfg["api_key"])
     if name == "plex":
         return PlexApp(app_cfg["url"], app_cfg["api_key"])
     if name == "radarr":
