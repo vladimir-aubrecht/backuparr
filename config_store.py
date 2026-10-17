@@ -15,7 +15,7 @@ class ConfigError(RuntimeError):
     truncated by a full disk, ...). The message says what to do about it."""
 
 
-APP_NAMES = ["radarr", "sonarr", "prowlarr", "profilarr", "bazarr", "tdarr", "sabnzbd", "tautulli", "seerr"]
+APP_NAMES = ["radarr", "sonarr", "prowlarr", "profilarr", "bazarr", "tdarr", "sabnzbd", "tautulli", "gamevault", "seerr"]
 
 DEFAULT_APP = {"enabled": False, "url": "", "api_key": "", "username": "", "password": ""}
 
@@ -62,6 +62,15 @@ APP_META = [
     },
     {"id": "sabnzbd", "label": "SABnzbd", "icon": "sabnzbd.svg", "status": "available", "key_required": True, "url_placeholder": "http://sabnzbd:8080", "extra_fields": []},
     {"id": "tautulli", "label": "Tautulli", "icon": "tautulli.svg", "status": "available", "key_required": True, "url_placeholder": "http://tautulli:8181", "extra_fields": []},
+    {
+        "id": "gamevault", "label": "GameVault", "icon": "gamevault.svg",
+        "status": "available", "key_required": True, "url_placeholder": "http://gamevault:8080",
+        "extra_fields": [
+            {"name": "database_password", "label": "Database password", "type": "password",
+             "help": "GameVault DB_PASSWORD; required by its native backup/restore API, including SQLite"},
+        ],
+        "backup_help": "Administrator API key required. Backs up the full database, news and latest cloud saves. Excludes game files, artwork files, older saves and server environment. Restore replaces all users and credentials; use the same GameVault version and database engine. See README before restoring.",
+    },
     {
         "id": "seerr",
         "label": "Seerr",
@@ -288,11 +297,15 @@ DEFAULTS = {
     "destinations": {name: dict(DEFAULT_DEST[name]) for name in DEST_NAMES},
 }
 
+DEFAULTS["apps"]["gamevault"]["database_password"] = ""
+
+
 def _secret_fields(cfg):
     """(container_dict, key) for every value encrypted at rest - an
     explicit allowlist, not "encrypt everything"."""
     fields = [(cfg["apps"][name], "api_key") for name in APP_NAMES]
     fields.append((cfg["apps"]["bazarr"], "password"))
+    fields.append((cfg["apps"]["gamevault"], "database_password"))
     fields.append((cfg["destinations"]["gdrive"], "client_secret"))
     fields.append((cfg["destinations"]["gdrive"], "developer_key"))
     fields.append((cfg["destinations"]["gdrive"], "refresh_token"))

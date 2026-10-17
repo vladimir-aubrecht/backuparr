@@ -518,6 +518,8 @@ def _validate_config(data, cfg):
         meta = app_meta(name)
         if app_data.get("enabled") and meta["status"] != "available":
             return f"{meta['label']} isn't available yet"
+        if name == "gamevault" and app_data.get("enabled") and not app_data.get("database_password"):
+            return "gamevault: GameVault DB_PASSWORD is required to enable it"
         if app_data.get("enabled") and not app_data.get("url"):
             return f"{name}: a URL is required to enable it"
         if app_data.get("enabled") and key_required(name) and not app_data.get("api_key"):
@@ -551,7 +553,7 @@ def api_set_config():
     for name in APP_NAMES:
         if name in data.get("apps", {}):
             incoming = data["apps"][name]
-            cfg["apps"][name].update({k: v for k, v in incoming.items() if k in DEFAULT_APP})
+            cfg["apps"][name].update({k: v for k, v in incoming.items() if k in DEFAULT_APP or k in _restore_override_fields(name)})
     for name in DEST_NAMES:
         if name in data.get("destinations", {}):
             incoming = data["destinations"][name]
@@ -908,6 +910,11 @@ def _restore_work(app_name, root, app_cfg, data, bazarr_backup_dir):
             log.info("restore: restoring tdarr collections...")
             ra.restore_app(app_name, app_cfg, tmp_dir, local_zip)
             RESTORE_RUN_STATE["message"] = "tdarr restore complete"
+
+        elif app_name == "gamevault":
+            result = ra.restore_app(app_name, app_cfg, tmp_dir, local_zip)
+            RESTORE_RUN_STATE["summary"] = result["summary"]
+            RESTORE_RUN_STATE["message"] = "gamevault restore complete; database table contents verified. Credentials are now those from the backup."
 
         elif app_name == "tautulli":
             log.info("restore: restoring tautulli...")

@@ -83,6 +83,7 @@ in-app "Connect" button, and OneDrive and Dropbox via a one-time
 | Tdarr | `POST /api/v2/cruddb` with `mode: getAll` for every internal DB collection (library settings, flows, global settings, node registrations, staged/output/statistics) | Fully API-driven both ways. Restore does `removeAll` then re-`insert`s each document one at a time (no bulk-insert mode) - destructive, asks for confirmation. |
 | SABnzbd | `GET /sabnzbd/api?mode=get_config` to back up; `mode=set_config` per key to restore | SABnzbd's API returns every password field (e.g. a Usenet server password) as `**********`, with no way to get the real value. Restore recreates each Usenet server and every plain `misc`-style setting via the API, and asks for each server's real password (fields left out of the API call are untouched, so a skipped password isn't overwritten with a blank). Categories, RSS feeds, and sorters aren't auto-restored. |
 | Tautulli | `GET /api/v2?cmd=download_database` and `cmd=download_config` - each streams a fresh copy directly, no trigger/poll step | The database comes back with Plex tokens nulled out; the config is only lightly sanitized - see the [Tautulli backup note](#tautulli-backup-note). Restore uploads each separately via `cmd=import_database` and `cmd=import_config` (multipart) - see the [Tautulli restore note](#tautulli-restore-note). |
+| GameVault | Native `/api/admin/database/backup` dump, news and latest cloud saves | Native database restore plus news/save APIs; validates database contents afterwards. Requires admin API key and `DB_PASSWORD`; [scope and restore instructions](#gamevault). |
 | Seerr | *(none)* | Not implemented - Seerr has no backup/restore API. Shown on the Settings tab as "Coming soon". |
 
 ### Profilarr backup note
@@ -551,3 +552,76 @@ GitHub](https://github.com/selfhst/icons)), licensed
 
 [GNU AGPLv3](LICENSE) - if you run a modified version as a network service,
 its source must be available to its users too.
+
+### GameVault
+
+GameVault support uses its **native API database dump and restore**, plus the
+news page and the latest cloud save for each available user/game pair. Set the
+server URL (for example `http://gamevault:8080`), an **administrator's API key**
+(from that user's profile), and **Database password** to the GameVault server's
+`DB_PASSWORD`. The database password is required even with SQLite. It is encrypted
+at rest in Backuparr and sent only to the database endpoints, in
+`X-Database-Password`; the API key uses `X-Api-Key`. No database port, config volume
+or helper container is required. Test connection checks the administrator and
+server version; the database password can only be checked when creating a dump.
+
+| Included | Restore path |
+| --- | --- |
+| Full PostgreSQL/SQLite database: users, password hashes, API keys, permissions, bookmarks, playtime/progress, game catalog and metadata, and other database records | GameVault's native multipart database restore API |
+| `news.md`, when present | `PUT /api/config/news` |
+| Latest cloud save ZIP for every user and game returned by the API, when available | `POST /api/savefiles/user/{user_id}/game/{game_id}` |
+
+**Not included:** game installer/ROM files, artwork/avatar/media files, older
+cloud-save revisions, saves for deleted or inaccessible users/games, client-local
+saves that were never uploaded, compose/environment settings, TLS material,
+plugins on disk, and other files outside the database/news/latest-save APIs.
+GameVault has no list/download API for historical cloud saves. HTTP 404 for a save means it is absent. HTTP 405 means the save API is disabled
+(`SAVEFILES_ENABLED`, or demo mode); this is logged and saves are excluded.
+An empty news file is also omitted because GameVault rejects empty restore content. The log reports how many latest saves were found. API pagination is
+checked and any other download failure aborts the whole backup. A second dump
+checks that database contents did not change while exporting saves; pause clients
+and indexing if this check fails.
+
+Artwork records and original file paths are preserved in the database, but their
+binary files are not. The media upload API creates new records and paths; it does
+not restore files under their original database IDs. Keep the original media and
+game volumes and mount paths, or restore those volumes separately. This API
+backup does **not** constitute a complete bare-metal backup of GameVault.
+
+**Restoring:** stop client activity and background index/metadata updates. Use the
+same GameVault version and database engine as the backup, and a target admin key
+and target `DB_PASSWORD` in Backuparr (Restore's connection override supports these
+fields). Select GameVault in Restore and confirm the replacement. Backuparr checks
+the archive, verifies engine/version against a fresh target dump, uploads the
+original database file, and downloads another dump to compare all database table
+contents and PostgreSQL sequence values. This check detects native restore errors
+that some GameVault versions log without returning an HTTP error. It is not a
+comparison of database owner/ACL settings or external files. Keep the server idle
+through verification: concurrent database writes can legitimately make the check
+fail. If it fails, inspect GameVault's logs before retrying; restoration may have
+already modified the target.
+
+The database restore **replaces all users, passwords and API keys**. The archive
+therefore includes the source administrator API key, which Backuparr uses for
+verification and restoring news/saves after the database is replaced. Update
+Backuparr's saved key to the restored source key afterwards if the target key was
+different. The target's configured `DB_PASSWORD` does not change. Latest saves are
+uploaded as new current revisions (original timestamps/installation IDs and old
+revision history cannot be recovered). Existing saves/news not present in the
+backup are left in place; for migration use an empty target savefiles volume so
+old saves cannot become associated with restored user/game IDs. Existing media
+and game files must correspond to the restored database.
+
+The ZIP includes sensitive data (password hashes, API keys, private user data and
+save files). Backuparr writes it with mode 0600; **the archive itself is not
+encrypted**. Protect the backup destination accordingly. No secrets are included
+in request URLs, server error bodies or progress logs. Redirects are refused.
+
+API contracts were checked against the official
+[GameVault backend 17.0.1, commit 859d71ef](https://github.com/Phalcode/gamevault-backend/tree/859d71ef46f3a1f00a236e5d4c7dbde1eeba02b3):
+[database endpoints](https://github.com/Phalcode/gamevault-backend/blob/859d71ef46f3a1f00a236e5d4c7dbde1eeba02b3/src/modules/admin/admin.controller.ts),
+[dump/restore implementation](https://github.com/Phalcode/gamevault-backend/blob/859d71ef46f3a1f00a236e5d4c7dbde1eeba02b3/src/modules/database/database.service.ts),
+[news API](https://github.com/Phalcode/gamevault-backend/blob/859d71ef46f3a1f00a236e5d4c7dbde1eeba02b3/src/modules/config/config.controller.ts),
+[save API](https://github.com/Phalcode/gamevault-backend/blob/859d71ef46f3a1f00a236e5d4c7dbde1eeba02b3/src/modules/savefiles/savefile.controller.ts),
+[save selection/history](https://github.com/Phalcode/gamevault-backend/blob/859d71ef46f3a1f00a236e5d4c7dbde1eeba02b3/src/modules/savefiles/savefile.service.ts), and
+[media upload semantics](https://github.com/Phalcode/gamevault-backend/blob/859d71ef46f3a1f00a236e5d4c7dbde1eeba02b3/src/modules/media/media.service.ts).

@@ -73,6 +73,7 @@
             </div>
             {% if m.status == 'available' %}
             <div class="app-card-body hidden">
+              {% if m.backup_help %}<p class="hint">{{ m.backup_help }}</p>{% endif %}
               {% if m.id in ('radarr', 'sonarr', 'sabnzbd') %}<div class="app-discovery hidden"></div>{% endif %}
               <label class="field">
                 <span class="field-label">URL</span>

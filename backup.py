@@ -22,6 +22,7 @@ import requests
 import destination_util
 import rclone_util
 from apps.bazarr import BazarrApp, BazarrError
+from apps.gamevault import GamevaultApp, GamevaultError
 from apps.profilarr import ProfilarrApp, ProfilarrError
 from apps.prowlarr import ProwlarrApp
 from apps.radarr import RadarrApp
@@ -55,6 +56,7 @@ except OSError:
 _CLEAN_MESSAGE_ERRORS = (
     BazarrError,
     ConfigError,
+    GamevaultError,
     destination_util.DestinationError,
     ProfilarrError,
     rclone_util.RcloneError,
@@ -187,6 +189,8 @@ def log_failure(logger, summary, exc, url=None, app=None):
 
 
 def build_app(name, app_cfg):
+    if name == "gamevault":
+        return GamevaultApp(app_cfg["url"], app_cfg["api_key"], app_cfg.get("database_password", ""))
     if name == "radarr":
         return RadarrApp(app_cfg["url"], app_cfg["api_key"])
     if name == "sonarr":

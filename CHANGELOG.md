@@ -5,7 +5,11 @@ format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+
+- GameVault native database backup/restore, news and latest cloud saves, with
+  encrypted database credentials, database-content verification and documented
+  exclusions for game/media files, save history and server environment.
 
 ## [1.2.1-beta] - 2026-10-07
 

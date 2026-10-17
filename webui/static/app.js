@@ -1643,6 +1643,8 @@ function renderRestoreState(state) {
         resultEl.textContent =
           `Restored ${s.servers_restored.length} server(s), ${s.misc_keys_restored.length} setting(s).` +
           (s.servers_missing_password.length ? ` No password set for: ${s.servers_missing_password.join(", ")}.` : "");
+      } else if (state.app === "gamevault") {
+        resultEl.textContent = state.message || "GameVault restore complete; credentials are now those from the backup.";
       } else if (s && (s.database || s.database_skipped || s.config)) {
         const parts = [];
         if (s.database) parts.push("database restored");

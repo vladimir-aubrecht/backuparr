@@ -10,6 +10,7 @@ import zipfile
 
 import rclone_util
 from apps.bazarr import BazarrApp
+from apps.gamevault import GamevaultApp
 from apps.prowlarr import ProwlarrApp
 from apps.radarr import RadarrApp
 from apps.sabnzbd import MASKED, SabnzbdApp
@@ -117,6 +118,9 @@ def restore_app(app_name, app_cfg, tmp_dir, local_zip, *, bazarr_backup_dir=None
       {"kind": "bazarr"} / {"kind": "tdarr"}
       {"kind": "tautulli", "summary": {...}} / {"kind": "sabnzbd", "summary": {...}}
     """
+    if app_name == "gamevault":
+        app = GamevaultApp(app_cfg["url"], app_cfg["api_key"], app_cfg.get("database_password", ""))
+        return {"kind": "gamevault", "summary": app.restore(local_zip)}
     if app_name in UPLOAD_RESTORE_APPS:
         restore_upload_app(app_name, app_cfg, local_zip)
         return {"kind": "upload"}
