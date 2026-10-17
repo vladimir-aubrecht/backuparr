@@ -24,6 +24,7 @@ format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Shared playlist/collection recovery uses the selected owner or administrator export, preserving membership when other users see filtered lists.
 - Media API restores remap library-specific deletion permissions and restore date-added metadata and Emby composers.
 - Plex manifest parsing explicitly requires the native JSON parser, preventing a Python fallback from accumulating large legacy artwork lists in memory.
 - Plex backups with many missing/external images remain automatically restorable: new exports store the image list separately, and the agent streams older large manifests with bounded memory.
