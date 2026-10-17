@@ -11,6 +11,10 @@ format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   game metadata, collections, saves/states, memory cards, covers/manuals and
   writable settings. See [scope and restore instructions](docs/romm.md).
 
+### Fixed
+
+- RomM asset restores stream multipart uploads, and streamed backups use ZIP64 for large files.
+
 ## [1.2.1-beta] - 2026-10-07
 
 ### Changed

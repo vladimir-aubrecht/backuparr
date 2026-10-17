@@ -195,7 +195,7 @@ class RommApp:
     def _blob(self, archive, path, member, *, resource=False):
         digest, size = hashlib.sha256(), 0
         try:
-            with self.request("GET", path, stream=True, resource=resource) as response, archive.open(member, "w") as output:
+            with self.request("GET", path, stream=True, resource=resource) as response, archive.open(member, "w", force_zip64=True) as output:
                 if "text/html" in response.headers.get("Content-Type", "").lower():
                     fail("asset download returned HTML; check reverse proxy authentication")
                 for chunk in response.iter_content(1024 * 1024):

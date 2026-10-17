@@ -12,6 +12,8 @@ import zipfile
 import pytest
 import requests
 
+from test_http_upload import read_multipart
+
 from apps.romm import EXCLUSIONS, RommApp, RommError, portable_metadata
 from apps.romm_restore import RommRestore, match_roms
 
@@ -84,8 +86,9 @@ class Server:
         if path.startswith("/api"):
             path = path[4:]
         record = {"method": method, "path": path, **kwargs}
-        if "files" in kwargs:
-            record["files"] = {k: (f[0], f[1].read(), f[2]) for k, f in kwargs["files"].items()}
+        assert "files" not in kwargs  # Raw requests files= would buffer the archive.
+        if hasattr(kwargs.get("data"), "read"):
+            record["files"], record["data"] = read_multipart(kwargs["data"], kwargs["headers"]["Content-Type"])
         self.calls.append(record)
         if method != "GET":
             return Reply({"id": 999}, status=201)
@@ -175,7 +178,7 @@ def test_export_restore_roundtrip_remaps_every_reference_and_keeps_binary_data(t
     smart = next(c for c in actions if c["path"] == "/collections/smart/140")
     assert json.loads(smart["data"]["filter_criteria"]) == {"platform_ids": [120], "collection_id": 130, "statuses": ["completed_100"]}
     manual = next(c for c in actions if c["path"] == "/roms/110/manuals")
-    assert manual["headers"] == {"x-upload-filename": "10.pdf"}
+    assert manual["headers"]["x-upload-filename"] == "10.pdf"
     assert manual["files"]["10.pdf"][1].endswith(b"manual/10.pdf")
     card_versions = [c["files"]["cardFile"][0] for c in actions if c["path"] == "/memory-cards/999/versions"]
     assert card_versions == ["older.zip", "latest.zip"]
@@ -334,3 +337,16 @@ def test_pagination_reads_every_visible_and_hidden_rom():
     assert len(driver.roms()) == 102
     assert [c["offset"] for c in calls] == [0, 100, 0]
     assert calls[-1]["statuses"] == "hidden"
+
+
+def test_streamed_assets_use_zip64_before_their_size_is_known(monkeypatch):
+    driver = app()
+    driver.request = lambda *a, **kw: Reply(content=b"x" * 2048)
+    # Exercise the ZIP64 boundary with small real bytes, without allocating GiB.
+    monkeypatch.setattr(zipfile, "ZIP64_LIMIT", 1024)
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        blob = driver._blob(archive, "/saves/1/content", "files/saves/1")
+    with zipfile.ZipFile(buffer) as archive:
+        assert archive.read(blob["member"]) == b"x" * 2048
+        assert archive.getinfo(blob["member"]).extract_version >= 45

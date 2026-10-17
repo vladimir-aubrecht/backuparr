@@ -10,6 +10,7 @@ import sys
 from urllib.parse import quote
 import zipfile
 
+from apps.http_upload import multipart_body
 from apps.romm import (EXCLUSIONS, FORMAT, METADATA, PROPS, SUPPORTED_VERSION,
                        RommApp, RommError, fail, filename, ident, pick, rows, settings)
 
@@ -343,8 +344,19 @@ class RommRestore:
         return {"roms": len(doc["roms"]), "collections": len(doc["collections"]), "assets": len(doc["assets"]), "memory_cards": len(doc["memory_cards"])}
 
     def write(self, method, path, **kwargs):
+        if "files" in kwargs:
+            upload = self._upload_data(kwargs.pop("files"), kwargs.pop("data", None))
+            kwargs["headers"] = {**kwargs.get("headers", {}), **upload.pop("headers")}
+            kwargs.update(upload)
         with self.app.request(method, path, **kwargs):
             pass
+
+    def _upload_data(self, files, data=None):
+        payload = multipart_body({
+            field: (filename, stream, self.archive.getinfo(stream.name).file_size, mime)
+            for field, (filename, stream, mime) in files.items()
+        }, data)
+        return {"data": payload, "headers": {"Content-Type": payload.content_type}}
 
     def upload(self, path, field, resource, **kwargs):
         with self.archive.open(resource["blob"]["member"]) as stream:
@@ -382,7 +394,7 @@ class RommRestore:
                     params.update({"overwrite": "true", "autocleanup": "false"})
                 response = self.app.json("PUT" if existing else "POST",
                     f"/{kind}/{existing}" if existing else f"/{kind}",
-                    params={} if existing else params, files=files)
+                    params={} if existing else params, **self._upload_data(files))
             aid = ident(response["id"])
             if kind == "screenshots":
                 self.write("PUT", f"/screenshots/{aid}", json={"is_public": asset.get("is_public", False)})
