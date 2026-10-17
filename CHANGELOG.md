@@ -23,6 +23,11 @@ format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Plex database exports named `databaseBackup.db`, including names with an appended UUID, are now accepted alongside the on-disk library filename. Restore instructions explain how to rename the downloaded snapshot.
 - Missing Plex artwork (HTTP 404) is recorded in the backup instead of discarding the database backup. Other download failures still fail the backup.
 - Plex's own same-origin redirects are followed without forwarding the token to other hosts, ports or protocols. External artwork redirects are recorded as unavailable; other redirect failures identify the requested endpoint.
+- Mobile layouts now keep navigation, settings, backup history and restore
+  controls within the screen. Compact toolbars, larger touch targets and
+  stacked history rows make the UI easier to use on phones.
+- Native form controls now follow the selected light or dark theme, including
+  time and destination pickers in Safari.
 
 ## [1.2.1-beta] - 2026-10-07
 
