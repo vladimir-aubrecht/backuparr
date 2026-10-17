@@ -15,7 +15,7 @@ class ConfigError(RuntimeError):
     truncated by a full disk, ...). The message says what to do about it."""
 
 
-APP_NAMES = ["radarr", "sonarr", "prowlarr", "profilarr", "bazarr", "tdarr", "sabnzbd", "tautulli", "seerr"]
+APP_NAMES = ["radarr", "sonarr", "prowlarr", "profilarr", "bazarr", "tdarr", "sabnzbd", "tautulli", "seerr", "romm"]
 
 DEFAULT_APP = {"enabled": False, "url": "", "api_key": "", "username": "", "password": ""}
 
@@ -62,6 +62,12 @@ APP_META = [
     },
     {"id": "sabnzbd", "label": "SABnzbd", "icon": "sabnzbd.svg", "status": "available", "key_required": True, "url_placeholder": "http://sabnzbd:8080", "extra_fields": []},
     {"id": "tautulli", "label": "Tautulli", "icon": "tautulli.svg", "status": "available", "key_required": True, "url_placeholder": "http://tautulli:8181", "extra_fields": []},
+    {
+        "id": "romm", "label": "RomM", "icon": "romm.svg", "status": "available",
+        "key_required": True, "url_placeholder": "http://romm:8080", "extra_fields": [],
+        "restore_supported": False,
+        "backup_help": "RomM 5.4.0: administrator client token. Backs up the token owner's saves, states, notes, collections and game status, plus editable library metadata/settings. Other users and ROM/BIOS files are excluded. API restore uses python -m apps.romm_restore; see docs/romm.md. Resource downloads also need access to /assets/romm/resources/.",
+    },
     {
         "id": "seerr",
         "label": "Seerr",

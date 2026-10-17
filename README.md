@@ -547,6 +547,13 @@ collection](https://selfh.st/icons/) ([selfhst/icons on
 GitHub](https://github.com/selfhst/icons)), licensed
 [CC BY 4.0](https://github.com/selfhst/icons/blob/main/LICENSE).
 
+## RomM support
+
+RomM 5.4.0 API backups and a preflight-first restore CLI are available. This covers
+the connected account's saves, states, notes, collections and game status, plus
+editable library metadata, covers/manuals and settings. Other users and ROM/BIOS
+binaries are not included. See [scope, setup and recovery](docs/romm.md).
+
 ## License
 
 [GNU AGPLv3](LICENSE) - if you run a modified version as a network service,

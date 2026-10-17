@@ -25,6 +25,7 @@ from apps.bazarr import BazarrApp, BazarrError
 from apps.profilarr import ProfilarrApp, ProfilarrError
 from apps.prowlarr import ProwlarrApp
 from apps.radarr import RadarrApp
+from apps.romm import RommApp, RommError
 from apps.sabnzbd import SabnzbdApp, SabnzbdError
 from apps.servarr import ServarrError, UnsafeRedirectError
 from apps.sonarr import SonarrApp
@@ -57,6 +58,7 @@ _CLEAN_MESSAGE_ERRORS = (
     ConfigError,
     destination_util.DestinationError,
     ProfilarrError,
+    RommError,
     rclone_util.RcloneError,
     SabnzbdError,
     ServarrError,
@@ -187,6 +189,8 @@ def log_failure(logger, summary, exc, url=None, app=None):
 
 
 def build_app(name, app_cfg):
+    if name == "romm":
+        return RommApp(app_cfg["url"], app_cfg["api_key"])
     if name == "radarr":
         return RadarrApp(app_cfg["url"], app_cfg["api_key"])
     if name == "sonarr":

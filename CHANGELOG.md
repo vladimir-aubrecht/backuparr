@@ -5,7 +5,11 @@ format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+
+- RomM 5.4.0 API backup and preflight-first recovery for the connected account,
+  game metadata, collections, saves/states, memory cards, covers/manuals and
+  writable settings. See [scope and restore instructions](docs/romm.md).
 
 ## [1.2.1-beta] - 2026-10-07
 
