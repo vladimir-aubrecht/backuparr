@@ -13,6 +13,7 @@ import zipfile
 
 import requests
 
+from apps.http_headers import RequestHeadersError, app_connection_config
 from apps.media_server import MediaServerError
 
 
@@ -298,7 +299,7 @@ def main(argv=None):
             name = manifest.get('app')
             if name not in ('jellyfin', 'emby'):
                 raise MediaServerError('Expected a Jellyfin or Emby API export')
-            cfg = load_config()['apps'].get(name, {}).copy()
+            cfg = app_connection_config(load_config(), name)
             if args.url:
                 cfg['url'] = args.url
             if args.key_file:
@@ -323,7 +324,7 @@ def main(argv=None):
                 print(json.dumps({'completed': restore.apply(), 'applied': True, 'restart_may_be_required': True}, indent=2))
             else:
                 print('Preview only. Re-run with --apply after reviewing the plan.')
-    except (MediaServerError, OSError, ValueError, KeyError, zipfile.BadZipFile) as exc:
+    except (MediaServerError, RequestHeadersError, OSError, ValueError, KeyError, zipfile.BadZipFile) as exc:
         print(f'Restore failed: {exc}', file=sys.stderr)
         return 1
     return 0

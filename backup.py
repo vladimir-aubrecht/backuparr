@@ -27,6 +27,7 @@ from apps.jellyfin import JellyfinApp
 from apps.media_server import MediaServerError
 from apps.nzbget import NzbgetApp, NzbgetError
 from apps.plex import PlexApp, PlexError
+from apps.http_headers import RequestHeadersError, app_connection_config, configure_app_headers
 from apps.profilarr import ProfilarrApp, ProfilarrError
 from apps.prowlarr import ProwlarrApp
 from apps.radarr import RadarrApp
@@ -58,6 +59,7 @@ except OSError:
 
 # Errors whose message was written for humans (and carries no URL or key).
 _CLEAN_MESSAGE_ERRORS = (
+    RequestHeadersError,
     BazarrError,
     ConfigError,
     destination_util.DestinationError,
@@ -195,6 +197,10 @@ def log_failure(logger, summary, exc, url=None, app=None):
 
 
 def build_app(name, app_cfg):
+    return configure_app_headers(_build_app(name, app_cfg), app_cfg.get("request_headers", []))
+
+
+def _build_app(name, app_cfg):
     if name == "nzbget":
         return NzbgetApp(app_cfg["url"], app_cfg.get("username", ""), app_cfg["api_key"])
     if name == "emby":
@@ -351,7 +357,7 @@ def run_backup(cfg, on_progress=None, should_cancel=None):
             if on_progress:
                 on_progress(i, len(apps), name)
             log.info("=== %s ===", name)
-            app_cfg = cfg["apps"][name]
+            app_cfg = app_connection_config(cfg, name)
 
             work_dir = os.path.join(run_tmp, name)
             archive_path = None

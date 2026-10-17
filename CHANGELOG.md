@@ -17,6 +17,11 @@ format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - A **Get Plex token** button signs in through Plex's own website and fills the token for a server you own, with a server selector when needed.
 - An optional Plex restore agent restores the library database through Backuparr's Restore tab. It works with the existing Plex Docker image, validates the container/data mount and backup version, preserves rollback copies and recovers interrupted restores. Includes compose setup and explicit restore limitations.
 
+- Global service authentication headers in Settings, with encrypted values and
+  Authelia setup instructions. Applied to app connection tests, discovery,
+  backups and restores while retaining app API credentials. Cross-origin
+  redirects are blocked when these headers are configured.
+
 ### Fixed
 
 - Plex manifest parsing explicitly requires the native JSON parser, preventing a Python fallback from accumulating large legacy artwork lists in memory.

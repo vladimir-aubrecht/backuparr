@@ -12,6 +12,7 @@ import rclone_util
 from apps.bazarr import BazarrApp
 from apps.plex import PlexApp
 from apps.plex_restore import PlexRestoreAgent
+from apps.http_headers import configure_app_headers
 from apps.prowlarr import ProwlarrApp
 from apps.radarr import RadarrApp
 from apps.sabnzbd import MASKED, SabnzbdApp
@@ -66,23 +67,27 @@ def extract_zip(local_zip, dest_dir):
 def restore_upload_app(name, app_cfg, local_zip):
     app_cls = UPLOAD_RESTORE_APPS[name]
     app = app_cls(app_cfg["url"], app_cfg["api_key"])
+    configure_app_headers(app, app_cfg.get("request_headers", []))
     return app.restore_upload(local_zip)
 
 
 def restore_bazarr(app_cfg, local_zip, backup_dir):
     app = BazarrApp(app_cfg["url"], app_cfg["api_key"])
+    configure_app_headers(app, app_cfg.get("request_headers", []))
     return app.restore_from_file(local_zip, backup_dir)
 
 
 def restore_tdarr(app_cfg, tmp_dir, local_zip):
     extract_dir = extract_zip(local_zip, os.path.join(tmp_dir, "extracted"))
     app = TdarrApp(app_cfg["url"], api_key=app_cfg.get("api_key") or None)
+    configure_app_headers(app, app_cfg.get("request_headers", []))
     app.restore(extract_dir)
 
 
 def restore_tautulli(app_cfg, tmp_dir, local_zip):
     extract_dir = extract_zip(local_zip, os.path.join(tmp_dir, "extracted"))
     app = TautulliApp(app_cfg["url"], app_cfg["api_key"])
+    configure_app_headers(app, app_cfg.get("request_headers", []))
     return app.restore(extract_dir)
 
 
@@ -103,6 +108,7 @@ def sabnzbd_server_summary(config):
 
 def restore_sabnzbd(app_cfg, config, password_prompt):
     app = SabnzbdApp(app_cfg["url"], app_cfg["api_key"])
+    configure_app_headers(app, app_cfg.get("request_headers", []))
     return app.restore(config, password_prompt)
 
 
@@ -125,6 +131,8 @@ def restore_app(app_name, app_cfg, tmp_dir, local_zip, *, bazarr_backup_dir=None
     if app_name == "plex":
         agent = PlexRestoreAgent(app_cfg.get("restore_agent_url"), app_cfg.get("restore_agent_token"))
         plex = PlexApp(app_cfg["url"], app_cfg["api_key"])
+        configure_app_headers(agent, app_cfg.get("request_headers", []))
+        configure_app_headers(plex, app_cfg.get("request_headers", []))
         return {"kind": "plex", "summary": agent.restore(local_zip, plex)}
     if app_name == "bazarr":
         if not bazarr_backup_dir:

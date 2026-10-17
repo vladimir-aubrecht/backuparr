@@ -6,6 +6,7 @@ import os
 import tempfile
 
 import secrets_crypto
+from apps.http_headers import RequestHeadersError, validate_request_headers
 
 CONFIG_PATH = os.environ.get("BACKUPARR_CONFIG", "/config/backuparr/config.json")
 
@@ -317,6 +318,7 @@ DESTINATION_META = [
 ]
 
 DEFAULTS = {
+    "request_headers": [],
     "retention_days": 7,
     "cron_schedule": "0 3 * * *",
     "notify_url": "",
@@ -338,6 +340,10 @@ def _secret_fields(cfg):
     fields.append((cfg["destinations"]["onedrive"], "token"))
     fields.append((cfg["destinations"]["dropbox"], "token"))
     fields.append((cfg, "notify_url"))
+    rows = cfg.get("request_headers", [])
+    if not isinstance(rows, list) or any(not isinstance(row, dict) or not isinstance(row.get("value"), str) for row in rows):
+        raise ConfigError("request_headers must be a list of name/value pairs")
+    fields.extend((row, "value") for row in rows)
     return fields
 
 
@@ -374,6 +380,10 @@ def load_config():
             needs_migration = True
         container[key] = secrets_crypto.decrypt(raw)
 
+    try:
+        validate_request_headers(merged["request_headers"])
+    except RequestHeadersError as exc:
+        raise ConfigError(str(exc)) from None
     if needs_migration:
         save_config(merged)
 
@@ -381,6 +391,10 @@ def load_config():
 
 
 def save_config(cfg):
+    try:
+        validate_request_headers(cfg.get("request_headers", []))
+    except RequestHeadersError as exc:
+        raise ConfigError(str(exc)) from None
     to_write = copy.deepcopy(cfg)
     for container, key in _secret_fields(to_write):
         container[key] = secrets_crypto.encrypt(container.get(key, ""))
