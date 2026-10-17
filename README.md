@@ -135,8 +135,10 @@ rejects a different major version):
    cannot be recovered. Install the same plugin versions.
 3. Recreate empty playlists and collections with their original names. Set
    playlist ownership/sharing manually: these access rules are not exported.
-   The sole administrator must be allowed to edit playlists, or specify
-   `--playlist-owner OLD_PLAYLIST_ID=USER_NAME` for each different editor.
+   The sole administrator must have a complete exported membership and be
+   allowed to edit playlists, or select the owner's export and editor with
+   `--playlist-owner OLD_PLAYLIST_ID=USER_NAME`. Missing or incomplete membership
+   stops the preview before any changes.
 4. Review the exported settings, especially paths, network bindings and user
    policies. Use a fresh target and stop playback/scans during restoration.
 5. Run the importer from a checkout/container containing this integration:
