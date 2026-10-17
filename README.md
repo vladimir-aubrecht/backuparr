@@ -9,7 +9,7 @@
 > included. Reviewed and maintained by a human.
 
 Scheduled config/database backups for Radarr, Sonarr, Prowlarr, Profilarr,
-Bazarr, Tdarr, SABnzbd, Tautulli, Plex, Jellyfin, and Emby (Seerr coming soon), sent to every
+Bazarr, Tdarr, SABnzbd, Tautulli, Plex, Jellyfin, Emby, and NZBGet (Seerr coming soon), sent to every
 destination you enable: Local storage, Google Drive, OneDrive, and Dropbox.
 Apps, URLs/API keys, destinations, schedule, retention,
 and restores are all configured and triggered from the web UI, not env vars.
@@ -33,6 +33,7 @@ See [CHANGELOG.md](CHANGELOG.md) for release history.
     - [Plex backup note](#plex-backup-note)
     - [Jellyfin backup note](#jellyfin-backup-note)
     - [Emby backup note](#emby-backup-note)
+    - [NZBGet backup note](#nzbget-backup-note)
     - [Profilarr backup note](#profilarr-backup-note)
     - [Tautulli backup note](#tautulli-backup-note)
     - [Tautulli restore note](#tautulli-restore-note)
@@ -89,6 +90,7 @@ in-app "Connect" button, and OneDrive and Dropbox via a one-time
 | Plex | Native database export plus API server/library settings, metadata and artwork | Includes every user's local watch/progress state. Optional image-independent [restore agent](docs/plex-restore-agent.md) for database recovery. See [Plex backup note](#plex-backup-note) for scope. |
 | Jellyfin | Read-only API export of configuration, plugins, catalog/artwork, users, playlist/collection membership and schedules | Includes per-user watch/progress data. See [Jellyfin backup note](#jellyfin-backup-note) for included files, missing data and manual recovery. |
 | Emby | Read-only API export of configuration, plugins, catalog/artwork, users, playlist/collection membership and schedules | Includes per-user watch/progress data. See [Emby backup note](#emby-backup-note) for included files, missing data and manual recovery. |
+| NZBGet | JSON-RPC `loadconfig` exports the saved configuration as `nzbget.conf` | Requires the full-access Control username/password. Includes passwords, variable references and server/category/extension settings. Excludes NZB contents, downloads and extension scripts. Restore manually through NZBGet. |
 | Seerr | *(none)* | Not implemented - Seerr has no backup/restore API. Shown on the Settings tab as "Coming soon". |
 
 ### Plex backup note
@@ -384,6 +386,33 @@ The obsolete `subtitles` named configuration is omitted because Emby cannot
 restore it through that endpoint; library/user subtitle options are included.
 
 See the [official API documentation](https://dev.emby.media/reference/RestAPI.html).
+
+### NZBGet backup note
+
+Use the server URL (for example `http://nzbget:6789`), **Control username**
+(`ControlUsername`, usually `nzbget`) and **Control password** (`ControlPassword`).
+Restricted/Add accounts cannot produce a complete backup; masked values cause
+backup and connection testing to fail instead of creating an incomplete archive.
+The control password is stored in Backuparr's encrypted `api_key` field.
+
+The archive contains a native `nzbget.conf` and restoration instructions. It
+preserves saved option values, including `${MainDir}` references, Usenet server
+credentials, categories and extension settings. Unsaved UI edits are excluded.
+
+Download the archive from History, extract `nzbget.conf`, and use NZBGet's
+**Settings > System > Restore settings**. Select the configuration sections to
+restore, save and reload NZBGet. Alternatively, stop NZBGet and replace its
+configuration file, retaining ownership/permissions. Review paths and reinstall
+extension scripts on a new host. Backuparr does not automate this restore.
+Treat the backup as containing live server and control passwords.
+
+**Missing:** queue/history/statistics (the API cannot import the native state),
+queued NZB contents/articles, downloaded/partial media, extension binaries or
+scripts, and log files. Readable but non-restorable diagnostic JSON is not
+included. This is a saved-configuration backup, not a job-state snapshot.
+
+See NZBGet's [RPC authentication](https://nzbget.com/documentation/api/) and
+[`loadconfig` documentation](https://nzbget.com/documentation/api/loadconfig/).
 
 ### Profilarr backup note
 

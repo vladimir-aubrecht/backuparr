@@ -15,7 +15,7 @@ class ConfigError(RuntimeError):
     truncated by a full disk, ...). The message says what to do about it."""
 
 
-APP_NAMES = ["radarr", "sonarr", "prowlarr", "profilarr", "bazarr", "tdarr", "sabnzbd", "tautulli", "plex", "jellyfin", "emby", "seerr"]
+APP_NAMES = ["radarr", "sonarr", "prowlarr", "profilarr", "bazarr", "tdarr", "sabnzbd", "tautulli", "plex", "jellyfin", "emby", "nzbget", "seerr"]
 
 DEFAULT_APP = {"enabled": False, "url": "", "api_key": "", "username": "", "password": ""}
 
@@ -87,6 +87,16 @@ APP_META = [
         "status": "available", "key_required": True,
         "url_placeholder": "http://emby:8096", "extra_fields": [],
         "backup_help": "API export: server/plugin settings, catalog and artwork, playlists/collections, schedules and per-user watched state. No native database, user passwords or plugin binaries/data stores. CLI restore after recreating users/libraries; manual Live TV recovery. Not a native restore archive.",
+        "restore_supported": False,
+    },
+    {
+        "id": "nzbget", "label": "NZBGet", "icon": "nzbget.svg",
+        "status": "available", "key_required": True,
+        "key_label": "Control password",
+        "backup_help": "Saved configuration including passwords, server/category/extension settings. Restore nzbget.conf through NZBGet Settings > System. No queue/history, downloads, NZB contents or scripts.",
+        "url_placeholder": "http://nzbget:6789",
+        "extra_fields": [{"name": "username", "label": "Control username", "type": "text",
+                          "help": "Full-access ControlUsername, usually nzbget"}],
         "restore_supported": False,
     },
     {
