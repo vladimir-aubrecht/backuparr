@@ -270,7 +270,7 @@ class OpenWebUIRestore:
         writes = 0
         try:
             with zipfile.ZipFile(self.archive) as z:
-                for file in self.selected['files']:
+                for file_index, file in enumerate(self.selected['files'], 1):
                     with z.open('files/' + identifier(file['id'])) as data:
                         meta = file.get('meta') or {}
                         payload = multipart_upload(data, z.getinfo('files/' + file['id']).file_size,
@@ -291,7 +291,7 @@ class OpenWebUIRestore:
                         if not isinstance(content, dict) or content.get('content') != indexed:
                             raise OpenWebUIError('open_webui: indexed file text was not restored')
                         writes += 1
-                    logging.info('open_webui: restored file %s/%s', len(mapping), len(self.selected['files']))
+                    logging.info('open_webui: restored file %s/%s', file_index, len(self.selected['files']))
                 for knowledge in self.selected['knowledge']:
                     result = self.app._json('POST', '/api/v1/knowledge/create', json={
                         'name': knowledge['name'], 'description': knowledge.get('description') or '', 'access_grants': []})

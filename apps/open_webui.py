@@ -281,7 +281,7 @@ class OpenWebUIApp:
                     response = self._request('GET', f'/api/v1/files/{item_id}/content', stream=True)
                     size = 0
                     try:
-                        with archive.open(name, 'w') as target:
+                        with archive.open(name, 'w', force_zip64=True) as target:
                             for chunk in response.iter_content(1024 * 1024):
                                 target.write(chunk)
                                 digest.update(chunk)

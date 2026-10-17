@@ -123,6 +123,7 @@ def test_export_is_private_complete_and_authenticates_without_query_keys(exporte
     assert os.stat(path).st_mode & 0o777 == 0o600
     with zipfile.ZipFile(path) as z:
         assert z.read('files/file-a') == b'data'
+        assert z.getinfo('files/file-a').extract_version >= 45  # Streamed members allow ZIP64 without knowing size.
         assert len(json.loads(z.read('chats.json'))) == 2
         assert json.loads(z.read('manifest.json'))['format'] == FORMAT
         assert json.loads(z.read('tools.json'))[0]['valves']['secret'] == 'tool-private'
@@ -207,12 +208,14 @@ def test_user_restore_preview_has_no_writes_and_refuses_wrong_owner(exported):
     assert api.writes == []
 
 
-def test_user_restore_maps_files_knowledge_and_actor_without_importing_other_users(exported):
+def test_user_restore_maps_files_knowledge_and_actor_without_importing_other_users(exported, caplog):
     path, _ = exported
     target, api = app(True)
     restore = OpenWebUIRestore(target, path, source_user='alice@example.com')
     restore.plan()
-    restore.apply()
+    with caplog.at_level('INFO'):
+        restore.apply()
+    assert 'restored file 1/1' in caplog.text and 'restored file 2/1' not in caplog.text
     bodies = {path: kwargs.get('json') for path, kwargs in api.writes}
     chat = bodies['/api/v1/chats/import']['chats'][0]
     assert chat['variables'] == {'answer': '42'}
