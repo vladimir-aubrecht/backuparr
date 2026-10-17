@@ -9,8 +9,9 @@
 > included. Reviewed and maintained by a human.
 
 Scheduled config/database backups for Radarr, Sonarr, Prowlarr, Profilarr,
-Bazarr, Tdarr, SABnzbd, Tautulli, Plex, Jellyfin, Emby, and NZBGet (Seerr coming soon), sent to every
-destination you enable: Local storage, Google Drive, OneDrive, and Dropbox.
+Bazarr, Tdarr, SABnzbd, Tautulli, Plex, Jellyfin, Emby, and NZBGet (Seerr coming
+soon), sent to every destination you enable: Local storage, Google Drive,
+OneDrive, and Dropbox.
 Apps, URLs/API keys, destinations, schedule, retention,
 and restores are all configured and triggered from the web UI, not env vars.
 

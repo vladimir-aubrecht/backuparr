@@ -22,9 +22,10 @@ import requests
 import destination_util
 import rclone_util
 from apps.bazarr import BazarrApp, BazarrError
-from apps.jellyfin import JellyfinApp
 from apps.emby import EmbyApp
-from apps.nzbget import NzbgetApp
+from apps.jellyfin import JellyfinApp
+from apps.media_server import MediaServerError
+from apps.nzbget import NzbgetApp, NzbgetError
 from apps.plex import PlexApp, PlexError
 from apps.profilarr import ProfilarrApp, ProfilarrError
 from apps.prowlarr import ProwlarrApp
@@ -60,6 +61,8 @@ _CLEAN_MESSAGE_ERRORS = (
     BazarrError,
     ConfigError,
     destination_util.DestinationError,
+    MediaServerError,
+    NzbgetError,
     PlexError,
     ProfilarrError,
     rclone_util.RcloneError,

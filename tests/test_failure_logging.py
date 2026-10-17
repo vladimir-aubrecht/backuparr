@@ -111,13 +111,13 @@ def test_log_failure_writes_one_line_or_the_full_stack(caplog):
 
 @pytest.fixture
 def one_app_run(tmp_path, monkeypatch):
-    def run(app_url, key=KEY, app_name="sonarr"):
+    def run(app_url, key=KEY, app_name="sonarr", username=""):
         monkeypatch.setattr(backup, "enabled_apps", lambda cfg: [app_name])
         monkeypatch.setattr(backup, "enabled_destinations", lambda cfg: ["local"])
         monkeypatch.setattr(destination_util, "sync", lambda cfg: None)
         monkeypatch.setattr(destination_util, "remote_root", lambda dest_id, cfg: str(tmp_path))
         monkeypatch.setattr(backup.rclone_util, "delete_older_than", lambda *args: None)
-        cfg = {"retention_days": 7, "apps": {app_name: {"url": app_url, "api_key": key}}, "destinations": {"local": {}}}
+        cfg = {"retention_days": 7, "apps": {app_name: {"url": app_url, "api_key": key, "username": username}}, "destinations": {"local": {}}}
         return backup.run_backup(cfg)
 
     return run
@@ -173,6 +173,9 @@ def test_a_work_folder_that_cannot_be_created_fails_that_app_only(one_app_run, m
 @pytest.mark.parametrize("app_name, driver, error", [
     ("sonarr", backup.SonarrApp, ServarrError("sonarr: unauthorized - check the API key")),
     ("plex", backup.PlexApp, backup.PlexError("plex: access denied; use the server owner's Plex token")),
+    ("jellyfin", backup.JellyfinApp, backup.MediaServerError("jellyfin: access denied; create an administrator API key in the server dashboard")),
+    ("emby", backup.EmbyApp, backup.MediaServerError("emby: access denied; create an administrator API key in the server dashboard")),
+    ("nzbget", backup.NzbgetApp, backup.NzbgetError("nzbget: access denied; use the full-access Control username and password")),
 ])
 def test_a_rejected_api_key_is_one_clean_line(one_app_run, monkeypatch, caplog, app_name, driver, error):
     def unauthorized(self, work_dir):
@@ -180,7 +183,7 @@ def test_a_rejected_api_key_is_one_clean_line(one_app_run, monkeypatch, caplog, 
 
     monkeypatch.setattr(driver, "backup", unauthorized)
     with caplog.at_level(logging.INFO):
-        ok, failed = one_app_run(f"http://{app_name}:8989", app_name=app_name)
+        ok, failed = one_app_run(f"http://{app_name}:8989", app_name=app_name, username="control")
     assert failed == [str(error)]
     (record,) = failure_records(caplog)
     detail = str(error).removeprefix(f"{app_name}: ")
