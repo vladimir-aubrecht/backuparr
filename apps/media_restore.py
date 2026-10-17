@@ -22,7 +22,7 @@ EDITABLE_METADATA = {
     "Name", "OriginalTitle", "SortName", "Overview", "Genres", "Tags", "Studios",
     "People", "ProductionYear", "IndexNumber", "ParentIndexNumber", "ProviderIds",
     "CommunityRating", "CriticRating", "CustomRating", "OfficialRating",
-    "PremiereDate", "EndDate", "LockedFields", "LockData", "ForcedSortName",
+    "PremiereDate", "EndDate", "DateCreated", "LockedFields", "LockData", "ForcedSortName",
     "Taglines", "ProductionLocations", "PreferredMetadataCountryCode",
     "PreferredMetadataLanguage", "DisplayOrder", "AspectRatio", "Video3DFormat",
     "AlbumArtists", "ArtistItems", "Album", "Status", "AirDays", "AirTime",
@@ -60,7 +60,7 @@ class MediaRestore:
 
     def _translate(self, value, field=""):
         if isinstance(value, str):
-            reference = field.endswith(("Id", "Ids")) or field in {"EnabledFolders", "ExcludedSubFolders", "BlockedMediaFolders", "OrderedViews", "GroupedFolders", "LatestItemsExcludes", "MyMediaExcludes"}
+            reference = field.endswith(("Id", "Ids")) or field in {"EnabledFolders", "EnableContentDeletionFromFolders", "ExcludedSubFolders", "BlockedMediaFolders", "OrderedViews", "GroupedFolders", "LatestItemsExcludes", "MyMediaExcludes"}
             if reference:
                 return self.user_map.get(value, self.item_map.get(value, self._path(value)))
             return self._path(value)
@@ -181,6 +181,8 @@ class MediaRestore:
                 new_id = self.item_map[old['Id']]
                 body = {k: v for k, v in old.items() if k in EDITABLE_METADATA}
                 body.update({'Id': new_id, 'Type': old.get('Type')})
+                if self.app.name == 'emby' and 'Composers' in old:
+                    body['Composers'] = old['Composers']
                 for key in ('Genres', 'Tags', 'Studios', 'People', 'Taglines', 'LockedFields'):
                     body.setdefault(key, [])
                 if self.app.name == 'emby':

@@ -9,6 +9,10 @@ format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Emby API-only backups of server/plugin settings, libraries, metadata/artwork, playlist/collection membership, schedules and per-user watched/progress data, with explicit limitations, a preview-first API restore command, and manual Live TV recovery instructions.
 
+### Fixed
+
+- Media API restores remap library-specific deletion permissions and restore date-added metadata and Emby composers.
+
 ## [1.1.1-beta] - 2026-10-06
 
 ### Added

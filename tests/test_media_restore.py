@@ -223,3 +223,49 @@ def test_missing_or_incomplete_playlist_owner_export_stops_before_any_write(tmp_
         with pytest.raises(MediaServerError, match='preview'):
             restore.apply()
     assert writes == []
+
+
+@pytest.mark.parametrize('server', ['emby', 'jellyfin'])
+def test_folder_deletion_grants_follow_library_ids_on_another_server(tmp_path, server):
+    source = driver()
+    source.name = server
+    source.session.routes['/Users'] = copy.deepcopy(USERS)
+    source.session.routes['/Users'][1]['Policy'].update({
+        'EnableContentDeletion': False, 'EnableContentDeletionFromFolders': ['10'],
+        'EnabledFolders': ['10', '20'], 'EnableAllFolders': False,
+    })
+    folders = [
+        {'Name': 'Temporary', 'ItemId': '10', 'LibraryOptions': {}},
+        {'Name': 'Family archive', 'ItemId': '20', 'LibraryOptions': {}},
+    ]
+    source.session.routes['/Library/VirtualFolders'] = folders
+    app, writes = target()
+    app.name = server
+    app.session.routes['/Library/VirtualFolders'] = [dict(f, ItemId={'10': '20', '20': '10'}[f['ItemId']]) for f in folders]
+    with zipfile.ZipFile(source.backup(tmp_path)) as archive:
+        restore = MediaRestore(app, archive)
+        restore.plan()
+        body = next(kw['json'] for section, _, path, kw in restore.actions
+                    if section == 'user policies' and 'new-hidden-id' in path)
+    assert body['EnabledFolders'] == ['20', '10']
+    assert body['EnableContentDeletionFromFolders'] == ['20']
+    assert not writes
+
+
+@pytest.mark.parametrize('server', ['emby', 'jellyfin'])
+def test_restore_preserves_editable_composers_and_date_added(tmp_path, server):
+    source = driver()
+    source.name = server
+    audio = dict(media('one'), Type='Audio', Composers=['Fixture Composer'], DateCreated='2024-02-03T12:34:56Z')
+    source._items = lambda *a, **kw: iter([audio])
+    app, writes = target()
+    app.name = server
+    app._items = lambda *a, **kw: iter([dict(audio, Id='new-one', Composers=[], DateCreated='2026-10-17T00:00:00Z')])
+    with zipfile.ZipFile(source.backup(tmp_path)) as archive:
+        restore = MediaRestore(app, archive)
+        restore.plan()
+        restore.apply()
+    body = next(kw['json'] for _, url, kw in writes if url.endswith('/Items/new-one'))
+    assert body['DateCreated'] == audio['DateCreated']
+    if server == 'emby':
+        assert body['Composers'] == audio['Composers']
