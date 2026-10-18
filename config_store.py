@@ -92,12 +92,13 @@ APP_META = [
     },
     {
         "id": "nzbget", "label": "NZBGet", "icon": "nzbget.svg",
-        "status": "available", "key_required": True,
+        "status": "available", "key_required": False,
         "key_label": "Control password",
+        "key_help": "Leave both Control credentials blank when NZBGet authentication is disabled",
         "backup_help": "Saved configuration including passwords, server/category/extension settings. Restore nzbget.conf through NZBGet Settings > System. No queue/history, downloads, NZB contents or scripts.",
         "url_placeholder": "http://nzbget:6789",
         "extra_fields": [{"name": "username", "label": "Control username", "type": "text",
-                          "help": "Full-access ControlUsername, usually nzbget"}],
+                          "help": "Optional; full-access ControlUsername when NZBGet authentication is enabled"}],
         "restore_supported": False,
     },
     {

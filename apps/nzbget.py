@@ -1,4 +1,4 @@
-"""Export NZBGet's saved configuration through its authenticated JSON-RPC API.
+"""Export NZBGet's saved configuration through its JSON-RPC API.
 
 loadconfig preserves variable references and, with the full-access control
 account, passwords. Queue/history files and extension scripts are not exported.
@@ -24,12 +24,13 @@ class NzbgetApp:
             valid = False
         if not valid:
             raise NzbgetError("nzbget: use an http(s) server URL without credentials or a query string")
-        if not isinstance(username, str) or not username.strip() or not isinstance(password, str) or not password:
-            raise NzbgetError("nzbget: Control username and Control password are required")
+        if not isinstance(username, str) or not isinstance(password, str):
+            raise NzbgetError("nzbget: Control username and Control password must be text")
         self.url = url.rstrip("/")
         self.timeout = timeout
         self.session = requests.Session()
-        self.session.auth = (username, password)
+        if username or password:
+            self.session.auth = (username, password)
 
     def _rpc(self, method, params=None):
         try:
@@ -42,7 +43,7 @@ class NzbgetApp:
             raise NzbgetError("nzbget: could not connect; check the server URL and network access") from None
         with response:
             if response.status_code in (401, 403):
-                raise NzbgetError("nzbget: access denied; use the full-access Control username and password")
+                raise NzbgetError("nzbget: access denied; check full-access Control credentials and reverse-proxy authentication")
             if 300 <= response.status_code < 400:
                 raise NzbgetError("nzbget: RPC request was redirected; use the final server URL or an internal URL")
             if response.status_code != 200:

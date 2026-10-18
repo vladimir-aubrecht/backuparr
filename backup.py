@@ -202,7 +202,7 @@ def build_app(name, app_cfg):
 
 def _build_app(name, app_cfg):
     if name == "nzbget":
-        return NzbgetApp(app_cfg["url"], app_cfg.get("username", ""), app_cfg["api_key"])
+        return NzbgetApp(app_cfg["url"], app_cfg.get("username", ""), app_cfg.get("api_key", ""))
     if name == "emby":
         return EmbyApp(app_cfg["url"], app_cfg["api_key"])
     if name == "jellyfin":

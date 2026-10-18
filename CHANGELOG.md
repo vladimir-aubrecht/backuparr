@@ -24,6 +24,8 @@ format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- NZBGet can be enabled, tested and backed up without Control credentials when
+  its own authentication is disabled. Blank credentials no longer send Basic auth.
 - Shared playlist/collection recovery uses the selected owner or administrator export, preserving membership when other users see filtered lists.
 - Media API restores remap library-specific deletion permissions and restore date-added metadata and Emby composers.
 - Plex manifest parsing explicitly requires the native JSON parser, preventing a Python fallback from accumulating large legacy artwork lists in memory.

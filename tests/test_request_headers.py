@@ -14,6 +14,7 @@ import backup
 import config_store
 import restore_actions
 from apps.http_headers import RequestHeadersError, configure_app_headers, validate_request_headers
+from apps.http_headers import app_connection_config
 
 
 SECRET = "Basic c2VydmljZTpmaXh0dXJlLXBhc3N3b3Jk"
@@ -150,6 +151,31 @@ def test_every_available_app_sends_headers_without_losing_its_key(name, wire):
         assert "apikey=native-key" in request.body
     else:
         assert "apikey=native-key" in request.url
+
+
+@pytest.mark.parametrize("header_name", ["Authorization", "Proxy-Authorization"])
+def test_nzbget_without_native_auth_uses_proxy_headers_for_tests_and_backups(authed_client, monkeypatch, tmp_path, header_name):
+    sent = []
+
+    def send(_adapter, request, **kwargs):
+        sent.append(request.copy())
+        return reply(request, {"id": 1, "result": [{"Name": "ControlPassword", "Value": ""}]})
+
+    monkeypatch.setattr(requests.adapters.HTTPAdapter, "send", send)
+    cfg = {"enabled": True, "url": "https://nzbget.example", "username": "", "api_key": ""}
+    headers = [{"name": header_name, "value": SECRET}]
+    assert authed_client.post("/api/config", json={"apps": {"nzbget": cfg}, "request_headers": headers}).status_code == 200
+    assert authed_client.post("/api/test/nzbget", json=cfg).json["ok"]
+    app = backup.build_app("nzbget", app_connection_config(config_store.load_config(), "nzbget"))
+    app.backup(str(tmp_path))
+    assert "ControlPassword=\n" in (tmp_path / "nzbget.conf").read_text()
+    assert len(sent) == 2
+    for request in sent:
+        assert request.headers[header_name] == SECRET
+        assert request.url == "https://nzbget.example/jsonrpc"
+        assert json.loads(request.body)["method"] == "loadconfig"
+        if header_name == "Proxy-Authorization":
+            assert "Authorization" not in request.headers
 
 
 def test_settings_encrypt_all_header_values_and_allow_removal(authed_client, caplog):

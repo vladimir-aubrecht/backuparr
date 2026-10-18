@@ -91,7 +91,7 @@ in-app "Connect" button, and OneDrive and Dropbox via a one-time
 | Plex | Native database export plus API server/library settings, metadata and artwork | Includes every user's local watch/progress state. Optional image-independent [restore agent](docs/plex-restore-agent.md) for database recovery. See [Plex backup note](#plex-backup-note) for scope. |
 | Jellyfin | Read-only API export of configuration, plugins, catalog/artwork, users, playlist/collection membership and schedules | Includes per-user watch/progress data. See [Jellyfin backup note](#jellyfin-backup-note) for included files, missing data and manual recovery. |
 | Emby | Read-only API export of configuration, plugins, catalog/artwork, users, playlist/collection membership and schedules | Includes per-user watch/progress data. See [Emby backup note](#emby-backup-note) for included files, missing data and manual recovery. |
-| NZBGet | JSON-RPC `loadconfig` exports the saved configuration as `nzbget.conf` | Requires the full-access Control username/password. Includes passwords, variable references and server/category/extension settings. Excludes NZB contents, downloads and extension scripts. Restore manually through NZBGet. |
+| NZBGet | JSON-RPC `loadconfig` exports the saved configuration as `nzbget.conf` | Uses full-access Control credentials when authentication is enabled; leave both blank otherwise. Includes passwords, variable references and server/category/extension settings. Excludes NZB contents, downloads and extension scripts. Restore manually through NZBGet. |
 | Seerr | *(none)* | Not implemented - Seerr has no backup/restore API. Shown on the Settings tab as "Coming soon". |
 
 ### Plex backup note
@@ -400,8 +400,10 @@ See the [official API documentation](https://dev.emby.media/reference/RestAPI.ht
 
 ### NZBGet backup note
 
-Use the server URL (for example `http://nzbget:6789`), **Control username**
-(`ControlUsername`, usually `nzbget`) and **Control password** (`ControlPassword`).
+Use the server URL (for example `http://nzbget:6789`). When NZBGet authentication
+is enabled, enter **Control username** (`ControlUsername`, usually `nzbget`) and
+**Control password** (`ControlPassword`). When authentication is disabled, leave
+both fields blank; Backuparr sends no native Basic authentication header.
 Restricted/Add accounts cannot produce a complete backup; masked values cause
 backup and connection testing to fail instead of creating an incomplete archive.
 The control password is stored in Backuparr's encrypted `api_key` field.
