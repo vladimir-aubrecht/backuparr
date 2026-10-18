@@ -53,6 +53,54 @@ def test_connection_reads_saved_config_with_full_credentials_without_mutating_it
     assert NzbgetApp("http://nzbget:6789", "nzbget", "password").session.auth == ("nzbget", "password")
 
 
+@pytest.mark.parametrize("username,password", [("", ""), ("control", "password"), ("control", ""), ("", "password")])
+def test_connection_and_backup_send_native_auth_only_when_configured(tmp_path, monkeypatch, username, password):
+    sent = []
+
+    def send(_adapter, request, **kwargs):
+        sent.append(request)
+        response = requests.Response()
+        response.status_code = 200
+        response._content = json.dumps({"id": 1, "result": [
+            {"Name": "MainDir", "Value": "/downloads"},
+            {"Name": "ControlPassword", "Value": password},
+        ]}).encode()
+        response._content_consumed = True
+        return response
+
+    monkeypatch.setattr(requests.adapters.HTTPAdapter, "send", send)
+    app = build_app("nzbget", {"url": "http://nzbget:6789", "username": username, "api_key": password})
+    assert "readable" in app.test_connection()
+    app.backup(str(tmp_path))
+    assert f"ControlPassword={password}\n" in (tmp_path / "nzbget.conf").read_text()
+    assert len(sent) == 2
+    for request in sent:
+        assert json.loads(request.body)["method"] == "loadconfig"
+        if username or password:
+            assert request.headers["Authorization"] == requests.auth._basic_auth_str(username, password)
+        else:
+            assert "Authorization" not in request.headers
+
+
+@pytest.mark.parametrize("credentials", [{}, {"username": "", "api_key": ""}])
+def test_nzbget_can_be_enabled_saved_and_tested_without_native_credentials(authed_client, monkeypatch, credentials):
+    cfg = {"enabled": True, "url": "http://nzbget:6789", **credentials}
+    response = authed_client.post("/api/config", json={"apps": {"nzbget": cfg}})
+    assert response.status_code == 200, response.json
+    saved = authed_client.get("/api/config").json["apps"]["nzbget"]
+    assert saved["enabled"] and saved["username"] == saved["api_key"] == ""
+    sessions = []
+
+    def check_config(app):
+        sessions.append(app.session.auth)
+        return [{"Name": "ControlPassword", "Value": ""}]
+
+    monkeypatch.setattr(NzbgetApp, "_config", check_config)
+    response = authed_client.post("/api/test/nzbget", json=cfg)
+    assert response.status_code == 200 and response.json["ok"], response.json
+    assert sessions == [None]
+
+
 def test_backup_preserves_secrets_variables_categories_and_writes_restore_instructions(tmp_path):
     app = driver()
     out = tmp_path / "new-directory"
@@ -107,6 +155,7 @@ def test_transport_errors_do_not_expose_credentials(caplog):
 def test_factory_uses_the_encrypted_credential_field():
     app = build_app("nzbget", {"url": "http://nzbget:6789", "username": "control", "api_key": "pass"})
     assert app.session.auth == ("control", "pass")
+    assert build_app("nzbget", {"url": "http://nzbget:6789"}).session.auth is None
     assert not restore_supported("nzbget")
 
 
@@ -121,6 +170,3 @@ def test_nzbget_settings_are_rendered_persisted_and_encrypted(authed_client, iso
     assert "private-nzbget-pass" not in Path(isolated_webui.CONFIG_PATH).read_text()
     monkeypatch.setattr(NzbgetApp, "_config", lambda self: [])
     assert client.post("/api/test/nzbget", json=cfg).json["ok"]
-    cfg["username"] = ""
-    assert client.post("/api/config", json={"apps": {"nzbget": cfg}}).status_code == 400
-    assert not client.post("/api/test/nzbget", json=cfg).json["ok"]

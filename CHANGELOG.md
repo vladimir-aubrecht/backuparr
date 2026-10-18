@@ -11,6 +11,11 @@ format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   control credentials, checks for masked responses, native configuration import
   instructions and explicit queue/history exclusions.
 
+### Fixed
+
+- NZBGet can be enabled, tested and backed up without Control credentials when
+  its own authentication is disabled. Blank credentials no longer send Basic auth.
+
 ## [1.1.1-beta] - 2026-10-06
 
 ### Added

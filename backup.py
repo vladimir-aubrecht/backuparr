@@ -61,7 +61,7 @@ def humanize_error(exc):
 
 def build_app(name, app_cfg):
     if name == "nzbget":
-        return NzbgetApp(app_cfg["url"], app_cfg.get("username", ""), app_cfg["api_key"])
+        return NzbgetApp(app_cfg["url"], app_cfg.get("username", ""), app_cfg.get("api_key", ""))
     if name == "radarr":
         return RadarrApp(app_cfg["url"], app_cfg["api_key"])
     if name == "sonarr":

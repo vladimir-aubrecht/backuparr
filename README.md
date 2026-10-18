@@ -83,13 +83,15 @@ paste, with no need to run rclone's interactive config wizard yourself.
 | Tdarr | `POST /api/v2/cruddb` with `mode: getAll` for every internal DB collection (library settings, flows, global settings, node registrations, staged/output/statistics) | Fully API-driven both ways. Restore does `removeAll` then re-`insert`s each document one at a time (no bulk-insert mode) - destructive, asks for confirmation. |
 | SABnzbd | `GET /sabnzbd/api?mode=get_config` to back up; `mode=set_config` per key to restore | SABnzbd's API returns every password field (e.g. a Usenet server password) as `**********`, with no way to get the real value. Restore recreates each Usenet server and every plain `misc`-style setting via the API, and asks for each server's real password (fields left out of the API call are untouched, so a skipped password isn't overwritten with a blank). Categories, RSS feeds, and sorters aren't auto-restored. |
 | Tautulli | `GET /api/v2?cmd=download_database` and `cmd=download_config` - each streams a fresh copy directly, no trigger/poll step | The database comes back with Plex tokens nulled out; the config is only lightly sanitized - see the [Tautulli backup note](#tautulli-backup-note). Restore uploads each separately via `cmd=import_database` and `cmd=import_config` (multipart); a config restore restarts Tautulli. |
-| NZBGet | JSON-RPC `loadconfig` exports the saved configuration as `nzbget.conf` | Requires the full-access Control username/password. Includes passwords, variable references and server/category/extension settings. Excludes NZB contents, downloads and extension scripts. Restore manually through NZBGet. |
+| NZBGet | JSON-RPC `loadconfig` exports the saved configuration as `nzbget.conf` | Uses full-access Control credentials when authentication is enabled; leave both blank otherwise. Includes passwords, variable references and server/category/extension settings. Excludes NZB contents, downloads and extension scripts. Restore manually through NZBGet. |
 | Seerr | *(none)* | Not implemented - Seerr has no backup/restore API. Shown on the Settings tab as "Coming soon". |
 
 ### NZBGet backup note
 
-Use the server URL (for example `http://nzbget:6789`), **Control username**
-(`ControlUsername`, usually `nzbget`) and **Control password** (`ControlPassword`).
+Use the server URL (for example `http://nzbget:6789`). When NZBGet authentication
+is enabled, enter **Control username** (`ControlUsername`, usually `nzbget`) and
+**Control password** (`ControlPassword`). When authentication is disabled, leave
+both fields blank; Backuparr sends no native Basic authentication header.
 Restricted/Add accounts cannot produce a complete backup; masked values cause
 backup and connection testing to fail instead of creating an incomplete archive.
 The control password is stored in Backuparr's encrypted `api_key` field.
